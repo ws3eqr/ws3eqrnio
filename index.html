@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WS3EQR | Biography</title>
+    <style>
+        /* --- Сброс стилей и шрифты --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: #000;
+            color: #fff;
+            overflow-x: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Экраны (Секции) --- */
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Скрываем все по умолчанию */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+
+        /* Активный экран */
+        .screen.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* --- 1. INTRO SCREEN --- */
+        #intro-screen {
+            background-color: #000;
+            z-index: 100;
+            display: flex; /* Интро видно сразу */
+            opacity: 1;
+        }
+
+        .glitch-text {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            opacity: 0;
+            animation: introAnim 4s forwards;
+        }
+
+        @keyframes introAnim {
+            0% { opacity: 0; transform: scale(0.9); }
+            10% { opacity: 1; transform: scale(1); text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #fff; } /* Резкое появление и свечение */
+            80% { opacity: 1; text-shadow: 0 0 5px #fff; }
+            100% { opacity: 0; transform: scale(1.1); } /* Уход в черноту */
+        }
+
+        /* --- 2. HOME SCREEN (MENU) --- */
+        #home-screen {
+            background-color: #1a1a1a; /* Минималистичный серый */
+        }
+
+        h1 { font-size: 2.5rem; margin-bottom: 20px; font-weight: 300; }
+        .subtitle { color: #888; margin-bottom: 40px; }
+
+        /* --- 3. BIO SCREEN --- */
+        #bio-screen {
+            background-color: #121212;
+            padding: 20px;
+            justify-content: flex-start;
+            overflow-y: auto; /* Прокрутка если контент длинный */
+            padding-top: 50px;
+        }
+
+        .bio-card {
+            background: #1e1e1e;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            text-align: left;
+            border: 1px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+        }
+
+        .bio-item { margin-bottom: 15px; }
+        .bio-label { color: #888; font-size: 0.9rem; margin-bottom: 5px; }
+        .bio-value { font-size: 1.1rem; color: #eee; }
+        
+        /* Теги для языков */
+        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        .tag {
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .tag-js { background: #f7df1e; color: #000; }
+        .tag-lua { background: #000080; color: #fff; }
+        .tag-py { background: #306998; color: #fff; }
+        .tag-html { background: #e34c26; color: #fff; }
+        .tag-hard { background: #b00b69; color: #fff; } /* Malbolge */
+        .tag-exp { background: #333; color: #ccc; border: 1px solid #555; }
+
+        /* --- 4. DETAILS SCREEN --- */
+        #details-screen {
+            background-color: #0f0f0f;
+            padding: 20px;
+        }
+
+        .project-link {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #0088cc, #005f8f);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .project-link:hover { transform: scale(1.05); }
+
+        .feedback-area {
+            margin-top: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #222;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 5px;
+        }
+        textarea { height: 100px; resize: none; }
+
+        /* --- Кнопки навигации --- */
+        .btn {
+            padding: 12px 30px;
+            background: transparent;
+            border: 2px solid #fff;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+            border-radius: 30px;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+        }
+        .btn-primary:hover {
+            background: #ccc;
+        }
+
+        .btn-back {
+            margin-top: 40px;
+            border-color: #555;
+            color: #888;
+        }
+        .btn-back:hover {
+            border-color: #fff;
+            color: #fff;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. ИНТРО (Загрузка) -->
+    <div id="intro-screen" class="screen active">
+        <div class="glitch-text">ws3eqr</div>
+    </div>
+
+    <!-- 2. ГЛАВНОЕ МЕНЮ -->
+    <div id="home-screen" class="screen">
+        <h1>Добро пожаловать</h1>
+        <p class="subtitle">Сайт с моей биографией</p>
+        <button class="btn btn-primary" onclick="showBio()">Просмотреть биографию</button>
+    </div>
+
+    <!-- 3. БИОГРАФИЯ -->
+    <div id="bio-screen" class="screen">
+        <div class="bio-card">
+            <h2 style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Личное дело</h2>
+            
+            <div class="bio-item">
+                <div class="bio-label">ФИО</div>
+                <div class="bio-value">Ваулин Константин Романович</div>
+            </div>
+
+            <div class="bio-item">
+                <div class="bio-label">Возраст / Дата рождения</div>
+                <div class="bio-value">14 лет (26.09.2011)</div>
+            </div>
+
+            <div class="bio-item">
+                <div class="bio-label">Обучение</div>
+                <div class="bio-value">Забайкальский край, Чита, МОУ СОШ Маккавеево</div>
+            </div>
+
+            <div class="bio-item">
+                <div class="bio-label">Знания языков</div>
+                <div class="tags">
+                    <span class="tag tag-js">JavaScript</span>
+                    <span class="tag tag-lua">Luau</span>
+                    <span class="tag tag-lua">Lua</span>
+                    <span class="tag tag-py">Python</span>
+                    <span class="tag tag-html">HTML</span>
+                </div>
+            </div>
+
+            <div class="bio-item">
+                <div class="bio-label">Изучаю сейчас</div>
+                <div class="tags">
+                    <span class="tag tag-exp">C++</span>
+                    <span class="tag tag-exp">C#</span>
+                    <span class="tag tag-exp">ANSI C</span>
+                    <span class="tag tag-exp">Rust</span>
+                    <span class="tag tag-hard">Malbolge 💀</span>
+                </div>
+            </div>
+
+            <div class="bio-item">
+                <div class="bio-label">Опыт работы</div>
+                <div class="tags" style="flex-direction: column; align-items: flex-start;">
+                    <span class="tag tag-exp">Python-разработчик: > 2 лет</span>
+                    <span class="tag tag-exp">Дизайнер: > 8 месяцев</span>
+                    <span class="tag tag-exp">Веб-дизайнер: 4 месяца</span>
+                    <span class="tag tag-exp">Lua-разработчик: > 2 месяцев</span>
+                    <span class="tag tag-exp">Тех. администратор: 18 дней</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="showDetails()">Подробно & Проекты</button>
+        <button class="btn btn-back" onclick="goHome()">Вернуться назад</button>
+    </div>
+
+    <!-- 4. ПОДРОБНО / ОБРАТНАЯ СВЯЗЬ -->
+    <div id="details-screen" class="screen">
+        <h2>Мои проекты</h2>
+        <p style="color:#888; margin-top:10px;">Основной канал разработки</p>
+        
+        <a href="https://t.me/ws3eqroblox" target="_blank" class="project-link">
+            ✈️ ws3eqroblox
+        </a>
+
+        <div class="feedback-area">
+            <h3 style="margin-bottom: 15px;">Обратная связь</h3>
+            <p style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
+                *Демо-режим. Для реального ответа пишите в Telegram.
+            </p>
+            <input type="text" id="fb-name" placeholder="Ваше имя">
+            <textarea id="fb-msg" placeholder="Сообщение..."></textarea>
+            <button class="btn" style="width: 100%; border-color: #0088cc; color: #0088cc;" onclick="sendFeedback()">Отправить</button>
+        </div>
+
+        <button class="btn btn-back" onclick="goHome()">На главный экран</button>
+    </div>
+
+    <script>
+        // --- ЛОГИКА САЙТА ---
+
+        // 1. Управление Интро
+        window.onload = function() {
+            setTimeout(() => {
+                // Скрываем интро
+                document.getElementById('intro-screen').style.opacity = '0';
+                
+                // Ждем пока анимация затухания пройдет (1 сек) и включаем Главный экран
+                setTimeout(() => {
+                    document.getElementById('intro-screen').style.display = 'none';
+                    document.getElementById('home-screen').classList.add('active');
+                }, 1000);
+            }, 4000); // Интро висит 4 секунды
+        };
+
+        // 2. Функция переключения экранов
+        function switchScreen(screenId) {
+            // Скрываем все экраны
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(s => {
+                s.classList.remove('active');
+                if(s.id !== 'intro-screen') s.style.display = 'none'; // Убираем из потока
+            });
+
+            // Показываем нужный
+            const activeScreen = document.getElementById(screenId);
+            activeScreen.style.display = 'flex';
+            
+            // Небольшая задержка для плавности opacity
+            setTimeout(() => {
+                activeScreen.classList.add('active');
+            }, 50);
+        }
+
+        // Кнопки
+        function showBio() {
+            switchScreen('bio-screen');
+        }
+
+        function showDetails() {
+            switchScreen('details-screen');
+        }
+
+        function goHome() {
+            switchScreen('home-screen');
+        }
+
+        // Имитация отправки формы
+        function sendFeedback() {
+            const name = document.getElementById('fb-name').value;
+            const msg = document.getElementById('fb-msg').value;
+
+            if(name && msg) {
+                alert(`Спасибо, ${name}! Ваше сообщение отправлено (Визуально). Для реальной связи лучше пишите в ТГ.`);
+                document.getElementById('fb-name').value = '';
+                document.getElementById('fb-msg').value = '';
+            } else {
+                alert('Пожалуйста, заполните поля');
+            }
+        }
+    </script>
+</body>
+</html>
