@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WS3EQR | PORTAL</title>
+    <style>
+        /* --- ОСНОВА --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Courier New', Courier, monospace; /* Техно-шрифт */
+        }
+
+        body {
+            background-color: #050505;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- ЗАГРУЗКА (INTRO) --- */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1s ease;
+        }
+        
+        .loader-text {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 5px;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            0% { text-shadow: 0 0 10px #fff; opacity: 1; }
+            100% { text-shadow: 0 0 2px #555; opacity: 0.5; }
+        }
+
+        /* --- КОНТЕНТ --- */
+        #content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease;
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .avatar {
+            width: 100px;
+            height: 100px;
+            background: #222;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(255,255,255,0.2);
+            /* Сюда можно вставить картинку через CSS или img */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        p { color: #888; margin-bottom: 40px; font-size: 0.9rem; }
+
+        /* --- КАРТОЧКИ ССЫЛОК --- */
+        .links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .link-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #333;
+            padding: 20px;
+            text-decoration: none;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .link-card:hover {
+            background: #fff;
+            color: #000;
+            transform: scale(1.02);
+            box-shadow: 0 0 15px rgba(255,255,255,0.5);
+        }
+
+        .link-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .link-card:hover::before {
+            left: 100%;
+        }
+
+        /* --- ЭФФЕКТ ПЕРЕХОДА (WARP) --- */
+        #warp-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+        }
+
+        .warp-line {
+            width: 100%;
+            height: 2px;
+            background: #fff;
+            margin: 20px 0;
+            animation: warpAnim 0.2s infinite;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .warp-text {
+            margin-top: 20px;
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+            animation: blink 0.1s infinite;
+        }
+
+        @keyframes warpAnim {
+            0% { transform: translateX(-100%); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%); opacity: 0; }
+        }
+        @keyframes blink { 0% {opacity:1;} 50% {opacity:0.3;} 100% {opacity:1;} }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. ИНТРО ПРИ ВХОДЕ -->
+    <div id="loader">
+        <div class="loader-text">INITIALIZING...</div>
+    </div>
+
+    <!-- 2. МЕНЮ ССЫЛОК -->
+    <div id="content">
+        <div class="avatar">WS</div>
+        <h1>WS3EQR</h1>
+        <p>Разработка / Дизайн / Code</p>
+
+        <div class="links-container">
+            <!-- ССЫЛКА 1: Твоя биография (возврат на главную) -->
+            <a href="index.html" class="link-card" onclick="startTransition(event, this.href)">
+                <span>📂 BIO FILE</span>
+                <span>→</span>
+            </a>
+
+            <!-- ССЫЛКА 2: Телеграм -->
+            <a href="https://t.me/ws3eqroblox" class="link-card" onclick="startTransition(event, this.href)">
+                <span>✈️ TELEGRAM</span>
+                <span>→</span>
+            </a>
+
+            <!-- ССЫЛКА 3: GitHub -->
+            <a href="https://github.com/ws3eqr" class="link-card" onclick="startTransition(event, this.href)">
+                <span>👾 GITHUB</span>
+                <span>→</span>
+            </a>
+            
+            <!-- ССЫЛКА 4: Ещё что-то (пример) -->
+            <a href="#" class="link-card" style="opacity: 0.5; cursor: not-allowed;">
+                <span>🔒 SECRET PROJECT</span>
+                <span>🔒</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 3. ЭКРАН ПЕРЕХОДА (WARP) -->
+    <div id="warp-overlay">
+        <div class="warp-line" style="width: 80%"></div>
+        <div class="warp-line" style="width: 60%"></div>
+        <div class="warp-line" style="width: 90%"></div>
+        <div class="warp-text">CONNECTING >></div>
+        <div class="warp-line" style="width: 70%"></div>
+        <div class="warp-line" style="width: 50%"></div>
+    </div>
+
+    <script>
+        // Анимация входа
+        window.onload = () => {
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                const content = document.getElementById('content');
+                
+                loader.style.opacity = '0';
+                setTimeout(() => { loader.style.display = 'none'; }, 1000);
+                
+                content.style.opacity = '1';
+                content.style.transform = 'translateY(0)';
+            }, 1500);
+        };
+
+        // Анимация ПЕРЕХОДА (Самое интересное)
+        function startTransition(e, url) {
+            e.preventDefault(); // Останавливаем обычный клик
+            
+            const warp = document.getElementById('warp-overlay');
+            warp.style.display = 'flex'; // Включаем эффект перелета
+
+            // Через 1.5 секунды реально переходим
+            setTimeout(() => {
+                window.location.href = url;
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
