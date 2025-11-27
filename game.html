@@ -1,0 +1,273 @@
+<script type="module">
+        // --- 1. ПОДКЛЮЧЕНИЕ FIREBASE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, runTransaction, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYIn-rdlk6sRe49J99PDN3ESD_668dChg",
+            authDomain: "ws3eqr-db.firebaseapp.com",
+            databaseURL: "https://ws3eqr-db-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "ws3eqr-db",
+            storageBucket: "ws3eqr-db.firebasestorage.app",
+            messagingSenderId: "411483957904",
+            appId: "1:411483957904:web:9377403d0aa36851fe0615"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // --- 2. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ---
+        let boardState = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'O';
+        let gameActive = true;
+        let gameMode = 'pve'; 
+        let playerSymbol = 'O'; 
+        let aiSymbol = 'X';
+        
+        // Никнейм игрока (генерируем или берем из памяти)
+        let myNickname = localStorage.getItem('ws_nickname');
+        if(!myNickname) {
+            myNickname = "Player_" + Math.floor(Math.random() * 9999);
+            localStorage.setItem('ws_nickname', myNickname);
+        }
+
+        // --- 3. ЗАГРУЗКА ИГРЫ ---
+        // Делаем функции доступными глобально (window), так как у нас type="module"
+        window.onload = () => {
+            simulateLoading();
+            loadLeaderboard(); // Загружаем топ из базы
+        };
+
+        function simulateLoading() {
+            let width = 0;
+            const bar = document.getElementById('progress');
+            const interval = setInterval(() => {
+                width += Math.random() * 10;
+                if(width >= 100) {
+                    width = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        document.getElementById('games-menu').style.display = 'block';
+                    }, 500);
+                }
+                bar.style.width = width + '%';
+            }, 100);
+        }
+
+        // --- 4. ФУНКЦИИ БАЗЫ ДАННЫХ (ТОП ИГРОКОВ) ---
+        
+        // Сохранить победу
+        function saveWinToDB() {
+            // Ссылка на конкретного игрока в базе
+            const userRef = ref(db, 'leaderboard/' + myNickname);
+            
+            // runTransaction позволяет безопасно прибавить +1
+            runTransaction(userRef, (currentData) => {
+                if (currentData === null) {
+                    return { wins: 1, name: myNickname };
+                } else {
+                    return { wins: (currentData.wins || 0) + 1, name: myNickname };
+                }
+            });
+        }
+
+        // Слушать обновления топа
+        function loadLeaderboard() {
+            const topRef = query(ref(db, 'leaderboard'), orderByChild('wins'), limitToLast(10));
+            
+            onValue(topRef, (snapshot) => {
+                const list = [];
+                snapshot.forEach((child) => {
+                    list.push(child.val());
+                });
+                // База отдает от меньшего к большему, переворачиваем
+                list.reverse();
+
+                let html = "";
+                list.forEach((player, index) => {
+                    let style = "";
+                    if(player.name === myNickname) style = "color: #00ffcc; border: 1px dashed #333;";
+                    
+                    html += `<div class="leaderboard-item" style="${style}">
+                        <span class="lb-name">${index+1}. ${player.name}</span>
+                        <span class="lb-score">${player.wins}</span>
+                    </div>`;
+                });
+
+                // Вставляем в оба раздела (пока для теста)
+                const lbAi = document.getElementById('lb-ai');
+                if(lbAi) lbAi.innerHTML = html;
+                
+                const lbHuman = document.getElementById('lb-human');
+                if(lbHuman) lbHuman.innerHTML = html;
+            });
+        }
+
+        // --- 5. ЛОГИКА ИГРЫ ---
+        
+        window.openTicTacToe = function() {
+            document.getElementById('games-menu').style.display = 'none';
+            document.getElementById('tictactoe-screen').style.display = 'flex';
+            resetGame();
+        }
+
+        window.backToMenu = function() {
+            document.getElementById('tictactoe-screen').style.display = 'none';
+            document.getElementById('games-menu').style.display = 'block';
+        }
+
+        window.toggleSettings = function() {
+            document.getElementById('settings-overlay').classList.toggle('open');
+            // При открытии настроек можно попросить сменить ник
+            // const newNick = prompt("Твой ник:", myNickname);
+            // if(newNick) { myNickname = newNick; localStorage.setItem('ws_nickname', newNick); }
+        }
+
+        window.setTheme = function(color) {
+            const r = document.documentElement;
+            if(color === 'white') {
+                r.style.setProperty('--bg-color', '#ffffff'); r.style.setProperty('--text-color', '#000000'); r.style.setProperty('--panel-bg', '#f0f0f0'); r.style.setProperty('--border-color', '#ccc');
+            } else if(color === 'pink') {
+                r.style.setProperty('--bg-color', '#ffc0cb'); r.style.setProperty('--text-color', '#590016'); r.style.setProperty('--panel-bg', '#fff0f5'); r.style.setProperty('--border-color', '#ff69b4');
+            } else if(color === 'gray') {
+                r.style.setProperty('--bg-color', '#333333'); r.style.setProperty('--text-color', '#ffffff'); r.style.setProperty('--panel-bg', '#444444'); r.style.setProperty('--border-color', '#666');
+            } else { 
+                r.style.setProperty('--bg-color', '#000000'); r.style.setProperty('--text-color', '#ffffff'); r.style.setProperty('--panel-bg', '#111111'); r.style.setProperty('--border-color', '#333');
+            }
+        }
+
+        window.setMode = function(mode) {
+            gameMode = mode;
+            document.getElementById('btn-pve').classList.remove('active');
+            document.getElementById('btn-multi').classList.remove('active');
+            
+            if(mode === 'pve') {
+                document.getElementById('btn-pve').classList.add('active');
+                document.getElementById('side-selector').style.display = 'block';
+            } else {
+                document.getElementById('btn-multi').classList.add('active');
+                document.getElementById('side-selector').style.display = 'none';
+            }
+            resetGame();
+        }
+
+        window.toggleSide = function() {
+            if(playerSymbol === 'O') {
+                playerSymbol = 'X'; aiSymbol = 'O';
+                document.getElementById('player-side').innerText = 'X (Второй)';
+            } else {
+                playerSymbol = 'O'; aiSymbol = 'X';
+                document.getElementById('player-side').innerText = 'O (Первый)';
+            }
+            resetGame();
+        }
+
+        window.resetGame = function() {
+            boardState = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'O'; 
+            document.getElementById('status').innerText = `Ход: ${currentPlayer}`;
+            
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.innerText = '';
+                cell.classList.remove('x', 'o');
+            });
+
+            if(gameMode === 'pve' && aiSymbol === 'O') {
+                setTimeout(aiMove, 500);
+            }
+        }
+
+        window.makeMove = function(index) {
+            if(boardState[index] !== '' || !gameActive) return;
+            if(gameMode === 'pve' && currentPlayer !== playerSymbol) return; 
+
+            updateBoard(index, currentPlayer);
+            
+            if(checkWin()) {
+                document.getElementById('status').innerText = `Победа: ${currentPlayer}!`;
+                gameActive = false;
+                
+                // ЕСЛИ ПОБЕДИЛ ЧЕЛОВЕК - СОХРАНЯЕМ В БАЗУ
+                if(gameMode === 'pve' && currentPlayer === playerSymbol) {
+                    saveWinToDB();
+                }
+                return;
+            }
+            if(boardState.every(cell => cell !== '')) {
+                document.getElementById('status').innerText = "Ничья!";
+                gameActive = false;
+                return;
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            document.getElementById('status').innerText = `Ход: ${currentPlayer}`;
+
+            if(gameMode === 'pve' && currentPlayer === aiSymbol) {
+                setTimeout(aiMove, 600);
+            }
+        }
+
+        function updateBoard(index, player) {
+            boardState[index] = player;
+            const cell = document.querySelectorAll('.cell')[index];
+            cell.innerText = player;
+            cell.classList.add(player.toLowerCase());
+        }
+
+        function aiMove() {
+            if(!gameActive) return;
+            let move = findBestMove(aiSymbol);
+            if(move === -1) move = findBestMove(playerSymbol);
+            if(move === -1 && boardState[4] === '') move = 4;
+            if(move === -1) {
+                let available = boardState.map((v, i) => v === '' ? i : null).filter(v => v !== null);
+                move = available[Math.floor(Math.random() * available.length)];
+            }
+            updateBoard(move, aiSymbol);
+            
+            if(checkWin()) {
+                document.getElementById('status').innerText = "ИИ победил 🤖";
+                gameActive = false;
+                return;
+            }
+            if(boardState.every(cell => cell !== '')) {
+                document.getElementById('status').innerText = "Ничья!";
+                gameActive = false;
+                return;
+            }
+            currentPlayer = playerSymbol;
+            document.getElementById('status').innerText = `Ход: ${currentPlayer}`;
+        }
+
+        function findBestMove(symbol) {
+            const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+            for(let combo of wins) {
+                const [a, b, c] = combo;
+                if(boardState[a] === symbol && boardState[b] === symbol && boardState[c] === '') return c;
+                if(boardState[a] === symbol && boardState[c] === symbol && boardState[b] === '') return b;
+                if(boardState[b] === symbol && boardState[c] === symbol && boardState[a] === '') return a;
+            }
+            return -1;
+        }
+
+        function checkWin() {
+            const wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+            return wins.some(combo => {
+                return boardState[combo[0]] !== '' &&
+                       boardState[combo[0]] === boardState[combo[1]] &&
+                       boardState[combo[1]] === boardState[combo[2]];
+            });
+        }
+
+        // Мультиплеер (фейковый для демо, реальный сложнее)
+        window.openMultiplayerModal = function() { document.getElementById('multi-modal').style.display = 'flex'; }
+        window.closeModal = function() { document.getElementById('multi-modal').style.display = 'none'; }
+        window.copyLink = function() { navigator.clipboard.writeText(window.location.href); alert("Ссылка скопирована!"); closeModal(); setMode('pvp'); }
+        window.startAutoMatch = function() {
+            const btn = event.target; btn.innerText = "Поиск...";
+            setTimeout(() => { btn.innerText = "Соперник: Bot_V3"; setTimeout(() => { closeModal(); setMode('pve'); aiSymbol = 'O'; playerSymbol = 'X'; document.getElementById('player-side').innerText = "X (Второй)"; resetGame(); }, 1000); }, 2000);
+        }
+    </script>
