@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WS3EQR | CODE STUDIO</title>
+    
+    <!-- Подключаем мощный движок редактора CodeMirror (как у профи) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/hint/show-hint.min.css">
+
+    <style>
+        /* --- 1. ОСНОВНОЙ СТИЛЬ (NEON DARK) --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Consolas', 'Fira Code', monospace; }
+        body { background-color: #050505; color: #fff; height: 100vh; overflow: hidden; }
+
+        /* --- 2. INTRO (ЗАГРУЗКА) --- */
+        #intro-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+            transition: opacity 1s ease;
+        }
+        .intro-text {
+            font-size: 4rem; font-weight: bold; letter-spacing: 5px;
+            color: #fff; text-shadow: 0 0 20px #0ff;
+            animation: flicker 2s infinite;
+        }
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { text-shadow: 0 0 20px #0ff, 0 0 40px #0ff; opacity: 1; }
+            20%, 24%, 55% { text-shadow: none; opacity: 0.5; }
+        }
+
+        /* --- 3. DASHBOARD (ВЫБОР ПРОЕКТА) --- */
+        #dashboard {
+            display: none; height: 100%; flex-direction: column;
+            align-items: center; justify-content: center;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+        }
+        .dash-card {
+            background: #111; border: 1px solid #333; padding: 40px;
+            border-radius: 10px; width: 400px; text-align: center;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
+        }
+        h2 { margin-bottom: 20px; color: #fff; letter-spacing: 2px; }
+        input, select {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            background: #000; border: 1px solid #444; color: #0ff;
+            border-radius: 5px; outline: none;
+        }
+        .btn-start {
+            width: 100%; padding: 15px; background: #0088cc; color: white;
+            border: none; cursor: pointer; font-weight: bold; font-size: 1.1rem;
+            transition: 0.3s;
+        }
+        .btn-start:hover { background: #00aaff; box-shadow: 0 0 15px #00aaff; }
+
+        /* --- 4. IDE (РЕДАКТОР) --- */
+        #ide-container {
+            display: none; height: 100%; flex-direction: column;
+        }
+
+        /* Верхняя панель */
+        .toolbar {
+            height: 50px; background: #111; border-bottom: 1px solid #333;
+            display: flex; align-items: center; padding: 0 20px;
+            justify-content: space-between;
+        }
+        .project-info { font-weight: bold; color: #888; }
+        .project-name { color: #0ff; margin-left: 10px; }
+        .toolbar-btns button {
+            background: #222; color: #fff; border: 1px solid #444;
+            padding: 5px 15px; cursor: pointer; margin-left: 10px;
+            transition: 0.2s;
+        }
+        .toolbar-btns button:hover { background: #444; }
+        .btn-save { border-color: #00ff00 !important; color: #00ff00 !important; }
+        .btn-run { background: #0088cc !important; border: none !important; }
+
+        /* Рабочая область */
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+        
+        /* Сайдбар */
+        .sidebar {
+            width: 250px; background: #0a0a0a; border-right: 1px solid #333;
+            padding: 10px;
+        }
+        .file-item {
+            padding: 8px; color: #aaa; cursor: pointer; display: flex; align-items: center;
+        }
+        .file-item.active { background: #222; color: #fff; border-left: 3px solid #0088cc; }
+        .file-icon { margin-right: 10px; font-size: 1.2rem; }
+
+        /* Редактор кода */
+        .editor-area { flex: 1; position: relative; }
+        .CodeMirror { height: 100% !important; font-size: 16px; line-height: 1.5; }
+
+        /* Терминал снизу */
+        .terminal {
+            height: 150px; background: #080808; border-top: 1px solid #333;
+            padding: 10px; overflow-y: auto; font-size: 0.9rem;
+            color: #ccc;
+        }
+        .term-line { margin-bottom: 5px; }
+        .term-success { color: #0f0; }
+        .term-error { color: #f00; }
+        .term-warn { color: #ff0; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. INTRO SCREEN -->
+    <div id="intro-screen">
+        <div class="intro-text">ws3eqr</div>
+    </div>
+
+    <!-- 2. DASHBOARD (Создание проекта) -->
+    <div id="dashboard">
+        <div class="dash-card">
+            <h2>NEW PROJECT</h2>
+            <input type="text" id="proj-name" placeholder="Project Name (e.g. main)" value="untitled">
+            
+            <select id="proj-lang">
+                <option value="python">🐍 Python (.py)</option>
+                <option value="javascript">🟨 JavaScript (.js)</option>
+                <option value="lua">🌙 Lua / Luau (.lua)</option>
+                <option value="cpp">⚙️ C++ (.cpp)</option>
+                <option value="csharp">🔷 C# (.cs)</option>
+                <option value="rust">🦀 Rust (.rs)</option>
+                <option value="htmlmixed">🌐 HTML5 (.html)</option>
+            </select>
+
+            <button class="btn-start" onclick="createProject()">CREATE & OPEN >></button>
+        </div>
+    </div>
+
+    <!-- 3. MAIN IDE INTERFACE -->
+    <div id="ide-container">
+        <!-- Тулбар -->
+        <div class="toolbar">
+            <div class="project-info">
+                WS3EQR STUDIO <span class="project-name" id="display-name">main.py</span>
+            </div>
+            <div class="toolbar-btns">
+                <button onclick="runCode()" class="btn-run">▶ RUN BUILD</button>
+                <button onclick="saveFile()" class="btn-save">💾 SAVE / EXPORT</button>
+                <button onclick="location.reload()">✖ CLOSE</button>
+            </div>
+        </div>
+
+        <!-- Рабочая зона -->
+        <div class="workspace">
+            <!-- Файловый менеджер -->
+            <div class="sidebar">
+                <div style="font-size:0.8rem; color:#666; margin-bottom:10px; text-transform:uppercase;">Explorer</div>
+                <div class="file-item active">
+                    <span class="file-icon">📄</span>
+                    <span id="sidebar-filename">main.py</span>
+                </div>
+                <div class="file-item">
+                    <span class="file-icon">📦</span>
+                    <span>README.md</span>
+                </div>
+                <div class="file-item">
+                    <span class="file-icon">⚙️</span>
+                    <span>config.json</span>
+                </div>
+            </div>
+
+            <!-- Редактор -->
+            <div class="editor-area">
+                <textarea id="code-editor"></textarea>
+            </div>
+        </div>
+
+        <!-- Терминал -->
+        <div class="terminal" id="terminal-output">
+            <div class="term-line">WS3EQR Console [Version 1.0.5]</div>
+            <div class="term-line">Ready. Waiting for input...</div>
+            <div class="term-line">-----------------------------------</div>
+        </div>
+    </div>
+
+    <!-- СКРИПТЫ -->
+    <!-- Библиотеки редактора -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <!-- Языковые пакеты -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/lua/lua.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script> <!-- Для C++, C#, Java -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/rust/rust.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <!-- Дополнения -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/edit/closebrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/selection/active-line.min.js"></script>
+
+    <script>
+        // --- ЛОГИКА ---
+        let editor;
+        let currentLang = 'python';
+        let currentExt = '.py';
+        let currentName = 'untitled';
+
+        // 1. Анимация входа
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('intro-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('intro-screen').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'flex';
+                }, 1000);
+            }, 3000);
+        };
+
+        // 2. Создание проекта
+        function createProject() {
+            const nameInput = document.getElementById('proj-name').value || 'untitled';
+            const langInput = document.getElementById('proj-lang').value;
+            
+            currentLang = langInput;
+            currentName = nameInput;
+
+            // Определяем расширение и режим
+            let mode = 'python';
+            if (langInput === 'javascript') { currentExt = '.js'; mode = 'javascript'; }
+            else if (langInput === 'lua') { currentExt = '.lua'; mode = 'lua'; }
+            else if (langInput === 'cpp') { currentExt = '.cpp'; mode = 'text/x-c++src'; }
+            else if (langInput === 'csharp') { currentExt = '.cs'; mode = 'text/x-csharp'; }
+            else if (langInput === 'rust') { currentExt = '.rs'; mode = 'rust'; }
+            else if (langInput === 'htmlmixed') { currentExt = '.html'; mode = 'htmlmixed'; }
+            else { currentExt = '.py'; mode = 'python'; }
+
+            // Обновляем интерфейс
+            document.getElementById('display-name').textContent = currentName + currentExt;
+            document.getElementById('sidebar-filename').textContent = currentName + currentExt;
+
+            // Переключаем экран
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('ide-container').style.display = 'flex';
+
+            // Инициализируем редактор
+            initEditor(mode);
+        }
+
+        function initEditor(mode) {
+            editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
+                mode: mode,
+                theme: "dracula",
+                lineNumbers: true,
+                autoCloseBrackets: true,
+                styleActiveLine: true,
+                indentUnit: 4,
+                lineWrapping: true
+            });
+            
+            // Стартовый код
+            let startCode = "";
+            if(mode === 'python') startCode = "# Developed by ws3eqr\nprint('Hello World!')";
+            if(mode === 'lua') startCode = "-- Developed by ws3eqr\nprint('Hello Roblox!')";
+            if(mode === 'text/x-c++src') startCode = "// Developed by ws3eqr\n#include <iostream>\n\nint main() {\n    return 0;\n}";
+            if(mode === 'htmlmixed') startCode = "<!-- ws3eqr Site -->\n<html>\n<body>\n    <h1>Hello</h1>\n</body>\n</html>";
+            
+            editor.setValue(startCode);
+        }
+
+        // 3. Симуляция запуска (Run)
+        function runCode() {
+            const term = document.getElementById('terminal-output');
+            term.innerHTML += `<div class="term-line">> Running build task for ${currentName}${currentExt}...</div>`;
+            
+            setTimeout(() => {
+                // Имитация рандомных событий компилятора
+                const isError = Math.random() > 0.7; // 30% шанс "ошибки"
+                
+                if (isError) {
+                    term.innerHTML += `<div class="term-line term-error">[ERROR] Syntax error at line ${Math.floor(Math.random()*10)+1}: Unexpected token.</div>`;
+                    term.innerHTML += `<div class="term-line term-warn">[WARN] Check your syntax logic.</div>`;
+                    term.innerHTML += `<div class="term-line term-error">Build FAILED.</div>`;
+                } else {
+                    term.innerHTML += `<div class="term-line term-success">Compiling... Done (0.4s)</div>`;
+                    term.innerHTML += `<div class="term-line">Output:</div>`;
+                    term.innerHTML += `<div class="term-line" style="color:#fff">Hello World! Process finished with exit code 0.</div>`;
+                    term.innerHTML += `<div class="term-line term-success">Build SUCCESS.</div>`;
+                }
+                
+                term.scrollTop = term.scrollHeight; // Автопрокрутка вниз
+            }, 800);
+        }
+
+        // 4. Экспорт файла (Save)
+        function saveFile() {
+            const code = editor.getValue();
+            const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = currentName + currentExt;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            const term = document.getElementById('terminal-output');
+            term.innerHTML += `<div class="term-line term-success">> File saved successfully as ${currentName}${currentExt}</div>`;
+            term.scrollTop = term.scrollHeight;
+        }
+    </script>
+</body>
+</html>
