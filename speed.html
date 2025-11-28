@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WS3EQR | SPEEDTEST</title>
+    <style>
+        /* --- НАСТРОЙКИ ЦВЕТОВ (ПЕРЕМЕННЫЕ) --- */
+        :root {
+            --bg: #0a0a0a;
+            --card-bg: #141414;
+            --text-main: #ffffff;
+            --text-muted: #666666;
+            --accent: #00e5ff; /* Неоновый голубой */
+            --danger: #ff2a2a; /* Красный */
+            --gauge-bg: #222;
+            --shadow: 0 10px 40px rgba(0, 229, 255, 0.1);
+        }
+
+        /* Светлая тема */
+        [data-theme="light"] {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #888888;
+            --accent: #007bff;
+            --gauge-bg: #e0e0e0;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; transition: background 0.3s, color 0.3s; }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* --- ШАПКА --- */
+        header {
+            position: absolute; top: 0; left: 0; width: 100%;
+            padding: 20px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: 2px; }
+        .logo span { color: var(--accent); }
+
+        /* Переключатель темы */
+        .theme-switch {
+            cursor: pointer; padding: 8px 16px;
+            border: 1px solid var(--text-muted); border-radius: 20px;
+            font-size: 0.9rem; color: var(--text-main); display: flex; align-items: center; gap: 8px;
+        }
+        .theme-switch:hover { background: var(--card-bg); }
+
+        /* --- ОСНОВНОЙ КОНТЕЙНЕР --- */
+        .container {
+            text-align: center;
+            width: 100%; max-width: 600px;
+        }
+
+        /* --- СПИДОМЕТР (SVG) --- */
+        .gauge-wrapper {
+            position: relative;
+            width: 300px; height: 150px; /* Половина круга */
+            margin: 0 auto 40px;
+            overflow: hidden;
+        }
+        .gauge-svg {
+            width: 300px; height: 300px; /* Полный круг, но мы покажем половину */
+            transform: rotate(-90deg); /* Поворот чтобы старт был слева */
+        }
+        
+        /* Круги спидометра */
+        .circle-bg {
+            fill: none; stroke: var(--gauge-bg);
+            stroke-width: 20;
+        }
+        .circle-fill {
+            fill: none; stroke: var(--accent);
+            stroke-width: 20; stroke-linecap: round;
+            stroke-dasharray: 0, 1000; /* Анимация заполнения */
+            transition: stroke 0.3s;
+        }
+
+        /* Цифры в центре */
+        .speed-display {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            text-align: center;
+        }
+        .speed-value {
+            font-size: 5rem; font-weight: bold; line-height: 1;
+        }
+        .speed-unit {
+            font-size: 1.2rem; color: var(--text-muted); text-transform: uppercase;
+        }
+
+        /* --- СТАТИСТИКА (СЕТКА) --- */
+        .stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 15px; margin-bottom: 40px;
+        }
+        .stat-card {
+            background: var(--card-bg); padding: 15px; border-radius: 12px;
+            box-shadow: var(--shadow);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .stat-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 5px; text-transform: uppercase; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; }
+        .stat-unit { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Иконки статуса */
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #444; margin-bottom: 5px;
+        }
+        .status-dot.active { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+        /* --- КНОПКА СТАРТ --- */
+        .btn-start {
+            background: transparent;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+        .btn-start:hover {
+            background: var(--accent);
+            color: var(--bg);
+            box-shadow: 0 0 30px var(--accent);
+        }
+        .btn-start:disabled {
+            opacity: 0.5; cursor: wait; box-shadow: none;
+        }
+
+        /* --- ИНДИКАТОР ПРОГРЕССА --- */
+        .progress-text {
+            margin-top: 20px; color: var(--text-muted); font-size: 0.9rem; min-height: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">ws3eqr <span>SPEED</span></div>
+        <div class="theme-switch" onclick="toggleTheme()">
+            <span id="theme-icon">☀</span> MODE
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- СПИДОМЕТР -->
+        <div class="gauge-wrapper">
+            <svg class="gauge-svg" viewBox="0 0 200 200">
+                <!-- Серый фон круга (полукруг) -->
+                <circle class="circle-bg" cx="100" cy="100" r="90" stroke-dasharray="283" stroke-dashoffset="0"></circle>
+                <!-- Заполнение цветом -->
+                <circle id="gauge-progress" class="circle-fill" cx="100" cy="100" r="90" stroke-dasharray="283" stroke-dashoffset="283"></circle>
+            </svg>
+            <div class="speed-display">
+                <div class="speed-value" id="main-display">0.0</div>
+                <div class="speed-unit">Mbps</div>
+            </div>
+        </div>
+
+        <!-- СТАТИСТИКА -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="status-dot" id="dot-ping"></div>
+                <div class="stat-label">PING</div>
+                <div class="stat-val" id="val-ping">--</div>
+                <div class="stat-unit">ms</div>
+            </div>
+            <div class="stat-card">
+                <div class="status-dot" id="dot-jitter"></div>
+                <div class="stat-label">JITTER</div>
+                <div class="stat-val" id="val-jitter">--</div>
+                <div class="stat-unit">ms</div>
+            </div>
+            <div class="stat-card">
+                <div class="status-dot" id="dot-download"></div>
+                <div class="stat-label">DOWNLOAD</div>
+                <div class="stat-val" id="val-download">--</div>
+                <div class="stat-unit">Mbps</div>
+            </div>
+            <div class="stat-card">
+                <div class="status-dot" id="dot-upload"></div>
+                <div class="stat-label">UPLOAD</div>
+                <div class="stat-val" id="val-upload">--</div>
+                <div class="stat-unit">Mbps</div>
+            </div>
+        </div>
+
+        <button class="btn-start" id="start-btn" onclick="startTest()">START TEST</button>
+        <div class="progress-text" id="status-text">Server: ws3-global-node [Ready]</div>
+
+    </div>
+
+    <script>
+        // --- ЛОГИКА ТЕМЫ ---
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.getElementById('theme-icon');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                icon.innerText = '☀';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                icon.innerText = '☾';
+            }
+        }
+
+        // --- ЛОГИКА СПИДОМЕТРА ---
+        const gauge = document.getElementById('gauge-progress');
+        const display = document.getElementById('main-display');
+        const MAX_SPEED = 500;
+        const CIRCLE_LENGTH = 283; // Длина окружности SVG (2 * pi * r) / 2 для полукруга
+
+        function setSpeed(value) {
+            // Ограничиваем значение
+            if (value > 600) value = 600;
+            
+            // Расчет длины штриха
+            // 283 - это полная длина. Мы начинаем с offset 283 (пусто) и идем к 0 (полно).
+            // Но у нас полукруг, так что математика чуть хитрая для SVG dasharray
+            
+            // Простая логика для визуализации:
+            // Dasharray: [закрашено, пусто]
+            const percent = value / MAX_SPEED;
+            const fill = CIRCLE_LENGTH * percent;
+            
+            // SVG dashoffset работает наоборот
+            const offset = CIRCLE_LENGTH - fill;
+            
+            gauge.style.strokeDashoffset = offset;
+            
+            // Цвет: если > 400, становится красным
+            if (value > 450) {
+                gauge.style.stroke = 'var(--danger)';
+                display.style.color = 'var(--danger)';
+            } else {
+                gauge.style.stroke = 'var(--accent)';
+                display.style.color = 'var(--text-main)';
+            }
+
+            display.innerText = value.toFixed(1);
+        }
+
+        // --- ЛОГИКА ТЕСТА ---
+        async function startTest() {
+            const btn = document.getElementById('start-btn');
+            const status = document.getElementById('status-text');
+            btn.disabled = true;
+            btn.innerText = "CONNECTING...";
+
+            // Сброс
+            setSpeed(0);
+            document.querySelectorAll('.stat-val').forEach(el => el.innerText = '--');
+            document.querySelectorAll('.status-dot').forEach(el => el.classList.remove('active'));
+
+            // 1. PING TEST (Реальный запрос)
+            status.innerText = "Measuring Latency (Ping)...";
+            document.getElementById('dot-ping').classList.add('active');
+            
+            const pings = [];
+            for(let i=0; i<5; i++) {
+                const start = Date.now();
+                try {
+                    // Пингуем сам себя или GitHub (запрос заголовков)
+                    await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+                } catch(e) {}
+                const end = Date.now();
+                pings.push(end - start);
+                // Задержка для реализма
+                await new Promise(r => setTimeout(r, 100));
+            }
+            
+            const minPing = Math.min(...pings);
+            const jitter = Math.max(...pings) - minPing;
+
+            document.getElementById('val-ping').innerText = minPing;
+            document.getElementById('val-jitter').innerText = jitter;
+            document.getElementById('dot-ping').classList.remove('active');
+            document.getElementById('dot-jitter').classList.add('active'); // Jitter готов
+            await new Promise(r => setTimeout(r, 500));
+            document.getElementById('dot-jitter').classList.remove('active');
+
+            // 2. DOWNLOAD TEST (Симуляция)
+            status.innerText = "Testing Download Speed...";
+            document.getElementById('dot-download').classList.add('active');
+            btn.innerText = "DOWNLOADING...";
+            
+            let currentSpeed = 0;
+            const targetSpeed = Math.floor(Math.random() * (520 - 100) + 100); // Случайная скорость от 100 до 520
+            
+            // Анимация разгона
+            for(let i=0; i<100; i++) {
+                // Кривая разгона (сначала быстро, потом колебания)
+                if (currentSpeed < targetSpeed) {
+                    currentSpeed += Math.random() * 15;
+                } else {
+                    currentSpeed -= Math.random() * 5; // Колебания
+                }
+                setSpeed(currentSpeed);
+                await new Promise(r => setTimeout(r, 50));
+            }
+            
+            const finalDownload = currentSpeed.toFixed(1);
+            document.getElementById('val-download').innerText = finalDownload;
+            document.getElementById('dot-download').classList.remove('active');
+
+            // 3. UPLOAD TEST (Симуляция)
+            status.innerText = "Testing Upload Speed...";
+            document.getElementById('dot-upload').classList.add('active');
+            btn.innerText = "UPLOADING...";
+            
+            // Сброс стрелки перед выгрузкой
+            setSpeed(0);
+            await new Promise(r => setTimeout(r, 300));
+
+            currentSpeed = 0;
+            const targetUpload = Math.floor(Math.random() * (300 - 50) + 50); // Выгрузка обычно меньше
+
+            for(let i=0; i<80; i++) {
+                if (currentSpeed < targetUpload) {
+                    currentSpeed += Math.random() * 10;
+                } else {
+                    currentSpeed -= Math.random() * 3;
+                }
+                setSpeed(currentSpeed);
+                await new Promise(r => setTimeout(r, 50));
+            }
+
+            document.getElementById('val-upload').innerText = currentSpeed.toFixed(1);
+            document.getElementById('dot-upload').classList.remove('active');
+
+            // 4. КОНЕЦ
+            setSpeed(0); // Сброс стрелки
+            status.innerText = "Test Completed. Server: ws3-global-node";
+            btn.innerText = "RESTART TEST";
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
