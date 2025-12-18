@@ -3,535 +3,507 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WS3EQR | QUANTUM IDE</title>
+    <title>WS3EQR | ULTIMATE IDE</title>
     
-    <!-- ИКОНКИ (FontAwesome) -->
+    <!-- ИКОНКИ -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- CODEMIRROR (Ядро редактора) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/material-ocean.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/scroll/simplescrollbars.css">
     
     <!-- ШРИФТЫ -->
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        /* --- ПЕРЕМЕННЫЕ (THEMING) --- */
+        /* --- 0. БАЗА --- */
         :root {
-            --bg-app: #0d0d0d;
-            --bg-sidebar: #111111;
-            --bg-editor: #141414;
-            --bg-panel: #1a1a1a;
-            --accent: #8a2be2; /* Фиолетовый WS3EQR */
-            --text-main: #e0e0e0;
-            --text-dim: #757575;
-            --border: #2a2a2a;
-            --glass: rgba(20, 20, 20, 0.7);
+            --black: #000000;
+            --dark-gray: #0a0a0a;
+            --panel: #111111;
+            --accent: #8a2be2; /* Фиолетовый неон */
+            --accent-glow: rgba(138, 43, 226, 0.4);
+            --text: #e0e0e0;
+            --border: #222;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; }
+        * { margin: 0; padding: 0; box-sizing: border-box; outline: none; user-select: none; }
         
         body {
-            background-color: var(--bg-app);
-            color: var(--text-main);
+            background-color: var(--black);
+            color: var(--text);
             font-family: 'Inter', sans-serif;
             height: 100vh;
             overflow: hidden;
-            display: flex;
-            opacity: 0; /* Скрыто для интро */
-            transition: opacity 1s ease;
         }
 
-        /* --- 1. INTRO (CINEMATIC) --- */
-        #intro-overlay {
+        /* --- 1. ЗАГРУЗКА (GLITCH INTRO) --- */
+        #boot-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 9999;
+            background: var(--black); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease;
+        }
+        
+        .glitch-logo {
+            font-family: 'JetBrains Mono', monospace; font-size: 4rem; font-weight: 800;
+            color: #fff; position: relative; letter-spacing: 5px;
+            animation: glitch 1s infinite alternate;
+        }
+        
+        .loading-bar {
+            width: 200px; height: 2px; background: #333; margin-top: 20px;
+            position: relative; overflow: hidden;
+        }
+        .loading-progress {
+            position: absolute; left: 0; top: 0; height: 100%; width: 0%;
+            background: var(--accent);
+            box-shadow: 0 0 10px var(--accent);
+            animation: load 2.5s forwards cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 2px 2px 0px #ff00ff, -2px -2px 0px #00ffff; }
+            100% { text-shadow: -2px 2px 0px #ff00ff, 2px -2px 0px #00ffff; }
+        }
+        @keyframes load { 0% { width: 0%; } 100% { width: 100%; } }
+
+        /* --- 2. ГЛАВНОЕ МЕНЮ (DASHBOARD) --- */
+        #dashboard {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            display: none; /* Скрыто по умолчанию */
+            flex-direction: column; justify-content: center; align-items: center;
+            z-index: 5000; animation: fadeIn 0.5s ease;
+        }
+
+        .dash-container {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px;
+            max-width: 800px; width: 90%;
+        }
+
+        .dash-header {
+            grid-column: span 2; text-align: center; margin-bottom: 30px;
+        }
+        .dash-header h1 { font-size: 2.5rem; letter-spacing: 2px; }
+        .dash-header p { color: #666; font-family: 'JetBrains Mono'; }
+
+        .dash-card {
+            background: var(--panel); border: 1px solid var(--border);
+            padding: 30px; border-radius: 12px; cursor: pointer;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 200px;
+        }
+
+        .dash-card:hover {
+            border-color: var(--accent); transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .dash-card:hover i { color: var(--accent); transform: scale(1.1); text-shadow: 0 0 15px var(--accent); }
+
+        .dash-card i { font-size: 3rem; margin-bottom: 15px; color: #444; transition: 0.3s; }
+        .dash-card h3 { font-size: 1.2rem; margin-bottom: 5px; }
+        .dash-card span { font-size: 0.8rem; color: #777; text-align: center; }
+
+        /* --- 3. ИНТЕРФЕЙС IDE --- */
+        #ide-interface {
+            display: none; height: 100vh; flex-direction: column;
+            animation: zoomIn 0.5s ease;
+        }
+
+        /* Верхняя панель */
+        .top-bar {
+            height: 45px; background: var(--dark-gray); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 20px; justify-content: space-between;
+        }
+        .logo-area { font-weight: 800; font-style: italic; color: #fff; letter-spacing: 1px; }
+        
+        .toolbar-actions { display: flex; gap: 10px; }
+        .tool-btn {
+            background: var(--panel); border: 1px solid var(--border);
+            color: #ccc; padding: 6px 15px; border-radius: 4px; font-size: 0.8rem;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .tool-btn:hover { background: #333; color: #fff; }
+        .btn-run { background: var(--accent); border: none; color: #fff; font-weight: bold; }
+        .btn-run:hover { box-shadow: 0 0 15px var(--accent-glow); }
+
+        /* Рабочая область */
+        .workspace { flex: 1; display: flex; overflow: hidden; }
+
+        /* Проводник */
+        .sidebar {
+            width: 260px; background: var(--panel); border-right: 1px solid var(--border);
             display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
-            transition: transform 0.8s cubic-bezier(0.7, 0, 0.3, 1);
         }
+        .sidebar-title {
+            padding: 15px; font-size: 0.75rem; color: #666; font-weight: bold;
+            text-transform: uppercase; letter-spacing: 1px;
+            display: flex; justify-content: space-between;
+        }
+        .file-list { flex: 1; overflow-y: auto; }
+        .file-item {
+            padding: 8px 20px; font-size: 0.9rem; color: #999; cursor: pointer;
+            border-left: 2px solid transparent; display: flex; align-items: center; gap: 10px;
+        }
+        .file-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .file-item.active { background: rgba(138,43,226,0.1); border-left-color: var(--accent); color: #fff; }
+
+        /* Редактор */
+        .editor-container { flex: 1; display: flex; flex-direction: column; background: var(--black); }
         
-        .logo-box {
-            position: relative;
-        }
-
-        .logo-text {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 3rem; font-weight: 700;
-            background: linear-gradient(90deg, #fff, var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            opacity: 0; transform: translateY(20px);
-            animation: logoReveal 1.5s forwards ease-out;
-        }
-
-        .loader-line {
-            width: 0%; height: 2px; background: var(--accent);
-            margin-top: 15px;
-            box-shadow: 0 0 15px var(--accent);
-            animation: loadLine 2s forwards ease-in-out;
-        }
-
-        @keyframes logoReveal { to { opacity: 1; transform: translateY(0); } }
-        @keyframes loadLine { to { width: 200px; } }
-
-        /* --- 2. SIDEBAR (ACTIVITY BAR) --- */
-        .activity-bar {
-            width: 50px; background: var(--bg-app);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; align-items: center;
-            padding-top: 15px; z-index: 10;
-        }
-        .act-icon {
-            font-size: 1.2rem; color: var(--text-dim);
-            margin-bottom: 25px; cursor: pointer;
-            transition: 0.2s; position: relative;
-        }
-        .act-icon:hover, .act-icon.active { color: #fff; }
-        .act-icon.active::before {
-            content: ''; position: absolute; left: -15px; top: 0;
-            height: 100%; width: 3px; background: var(--accent);
-        }
-
-        /* --- 3. EXPLORER (SIDEBAR) --- */
-        .explorer {
-            width: 250px; background: var(--bg-sidebar);
-            display: flex; flex-direction: column;
-            border-right: 1px solid var(--border);
-            transition: width 0.3s;
-        }
-        
-        .sidebar-header {
-            padding: 15px; font-size: 0.75rem; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        
-        .action-icons i { margin-left: 10px; cursor: pointer; transition: 0.2s; }
-        .action-icons i:hover { color: #fff; }
-
-        .file-tree { flex: 1; overflow-y: auto; padding-top: 5px; }
-        
-        .tree-item {
-            padding: 6px 15px; cursor: pointer; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 8px; color: #ccc;
-            border-left: 2px solid transparent;
-        }
-        .tree-item:hover { background: rgba(255,255,255,0.05); }
-        .tree-item.active { background: rgba(138, 43, 226, 0.1); border-left-color: var(--accent); color: #fff; }
-        .folder-content { margin-left: 15px; border-left: 1px solid #333; }
-
-        /* --- 4. MAIN EDITOR AREA --- */
-        .main-area { flex: 1; display: flex; flex-direction: column; background: var(--bg-editor); }
-
-        /* Tabs */
-        .tabs-bar {
-            height: 40px; background: var(--bg-app);
-            display: flex; overflow-x: auto;
-            border-bottom: 1px solid var(--border);
-        }
+        /* Вкладки */
+        .tabs { display: flex; background: var(--dark-gray); height: 35px; overflow-x: auto; }
         .tab {
-            padding: 0 15px; height: 100%; display: flex; align-items: center;
-            gap: 8px; font-size: 0.85rem; color: var(--text-dim);
-            background: var(--bg-app); border-right: 1px solid var(--border);
-            cursor: pointer; min-width: 120px;
+            padding: 0 20px; display: flex; align-items: center; gap: 8px; font-size: 0.85rem;
+            color: #777; border-right: 1px solid var(--border); cursor: pointer;
+            background: var(--dark-gray); min-width: 120px;
         }
-        .tab.active { background: var(--bg-editor); color: #fff; border-top: 2px solid var(--accent); }
-        .tab-close { font-size: 0.7rem; margin-left: auto; opacity: 0; }
-        .tab:hover .tab-close { opacity: 1; }
+        .tab.active { background: var(--black); color: #fff; border-top: 2px solid var(--accent); }
+        .tab i { font-size: 0.8rem; }
 
-        /* Editor Wrapper */
-        .editor-wrapper { flex: 1; position: relative; overflow: hidden; }
-        .CodeMirror { height: 100% !important; font-family: 'JetBrains Mono', monospace; font-size: 14px; background: var(--bg-editor) !important; }
-        
-        /* --- 5. TERMINAL & BOTTOM PANEL --- */
-        .bottom-panel {
-            height: 180px; background: var(--bg-panel);
-            border-top: 1px solid var(--border);
+        /* Сам редактор CodeMirror */
+        .CodeMirror { height: 100% !important; background: var(--black) !important; font-family: 'JetBrains Mono'; font-size: 15px; }
+        .CodeMirror-gutters { background: var(--black) !important; border-right: 1px solid #222; }
+
+        /* Терминал */
+        .terminal-panel {
+            height: 200px; background: var(--panel); border-top: 1px solid var(--border);
             display: flex; flex-direction: column;
         }
-        .panel-header {
-            padding: 8px 20px; display: flex; gap: 20px;
-            border-bottom: 1px solid var(--border); font-size: 0.8rem; text-transform: uppercase;
+        .term-header {
+            padding: 5px 15px; background: #0f0f0f; font-size: 0.75rem; color: #888;
+            border-bottom: 1px solid #222; display: flex; gap: 15px;
         }
-        .panel-tab { cursor: pointer; color: var(--text-dim); }
-        .panel-tab.active { color: #fff; border-bottom: 1px solid #fff; }
-        
-        .terminal-content {
-            flex: 1; padding: 15px; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem;
+        .term-content {
+            flex: 1; padding: 15px; font-family: 'JetBrains Mono'; font-size: 0.9rem;
             overflow-y: auto; color: #ccc;
         }
-        .cmd-line { display: flex; gap: 10px; margin-top: 5px; }
-        .prompt { color: var(--accent); font-weight: bold; }
-        .cmd-input { background: transparent; border: none; color: #fff; flex: 1; font-family: inherit; }
+        .log-line { margin-bottom: 4px; }
+        .log-success { color: #50fa7b; }
+        .log-error { color: #ff5555; }
+        .log-info { color: #8be9fd; }
 
-        /* --- 6. MODALS & PREVIEW --- */
-        #preview-frame {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: #fff; display: none; z-index: 50;
-        }
+        /* Вспомогательные инпуты */
+        input[type="file"] { display: none; }
 
-        .status-bar {
-            height: 25px; background: var(--accent); color: #fff;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 0 15px; font-size: 0.75rem; font-weight: 600;
-        }
-
-        /* --- 7. EXTENSIONS MODAL --- */
-        .modal {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 500px; background: #1e1e1e; border: 1px solid var(--border);
-            border-radius: 8px; padding: 20px; z-index: 100;
-            display: none; box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-        .ext-item {
-            display: flex; align-items: center; gap: 15px; padding: 10px;
-            border-bottom: 1px solid #333;
-        }
-        .ext-btn {
-            margin-left: auto; padding: 5px 15px; background: var(--accent);
-            border: none; color: #fff; border-radius: 4px; cursor: pointer;
-        }
-
-        /* Scrollbars */
-        ::-webkit-scrollbar { width: 10px; height: 10px; }
-        ::-webkit-scrollbar-track { background: var(--bg-app); }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 5px; }
-        ::-webkit-scrollbar-thumb:hover { background: #444; }
-
+        /* Анимации */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- ЗАГРУЗКА -->
-    <div id="intro-overlay">
-        <div class="logo-box">
-            <div class="logo-text">WS3EQR IDE</div>
-            <div class="loader-line"></div>
-        </div>
+    <!-- 1. ЗАГРУЗКА -->
+    <div id="boot-screen">
+        <div class="glitch-logo">WS3EQR IDE</div>
+        <div class="loading-bar"><div class="loading-progress"></div></div>
+        <div style="margin-top: 10px; color: #555; font-size: 0.8rem;">INITIALIZING CORE SYSTEMS...</div>
     </div>
 
-    <!-- ОСНОВНОЙ ИНТЕРФЕЙС -->
-    <!-- Левая панель иконок -->
-    <div class="activity-bar">
-        <div class="act-icon active" title="Explorer"><i class="fa-regular fa-file"></i></div>
-        <div class="act-icon" title="Search"><i class="fa-solid fa-search"></i></div>
-        <div class="act-icon" title="Extensions" onclick="toggleMods()"><i class="fa-solid fa-cube"></i></div>
-        <div class="act-icon" style="margin-top: auto;" title="Settings"><i class="fa-solid fa-gear"></i></div>
-    </div>
+    <!-- 2. МЕНЮ (DASHBOARD) -->
+    <div id="dashboard">
+        <div class="dash-container">
+            <div class="dash-header">
+                <h1>WELCOME BACK</h1>
+                <p>Select an option to begin coding</p>
+            </div>
 
-    <!-- Проводник -->
-    <div class="explorer">
-        <div class="sidebar-header">
-            <span>Explorer</span>
-            <div class="action-icons">
-                <i class="fa-solid fa-file-circle-plus" onclick="createNewFile()" title="New File"></i>
-                <i class="fa-solid fa-folder-plus" title="New Folder"></i>
+            <!-- Кнопка: Новый проект -->
+            <div class="dash-card" onclick="startNewProject()">
+                <i class="fa-solid fa-code"></i>
+                <h3>New Project</h3>
+                <span>Create Python, Lua, or Web project</span>
+            </div>
+
+            <!-- Кнопка: Загрузить файл -->
+            <div class="dash-card" onclick="triggerUpload()">
+                <i class="fa-solid fa-upload"></i>
+                <h3>Open File</h3>
+                <span>Upload .py, .lua, .js from PC</span>
+            </div>
+
+            <!-- Кнопка: Шаблоны -->
+            <div class="dash-card" onclick="loadTemplate()">
+                <i class="fa-solid fa-layer-group"></i>
+                <h3>Templates</h3>
+                <span>Load WS3EQR Standard Boilerplate</span>
+            </div>
+
+            <!-- Кнопка: GitHub -->
+            <div class="dash-card" style="opacity: 0.5;">
+                <i class="fa-brands fa-github"></i>
+                <h3>Clone Repo</h3>
+                <span>(Coming Soon)</span>
             </div>
         </div>
-        <div class="file-tree" id="file-tree">
-            <!-- Дерево файлов генерируется JS -->
-        </div>
     </div>
 
-    <!-- Редактор -->
-    <div class="main-area">
-        <div class="tabs-bar" id="tabs-container">
-            <!-- Вкладки генерируются JS -->
+    <!-- 3. IDE ИНТЕРФЕЙС -->
+    <div id="ide-interface">
+        <!-- Тулбар -->
+        <div class="top-bar">
+            <div class="logo-area"><i class="fa-solid fa-cube" style="color:var(--accent)"></i> WS3EQR STUDIO</div>
+            <div class="toolbar-actions">
+                <button class="tool-btn" onclick="returnToMenu()"><i class="fa-solid fa-house"></i> MENU</button>
+                <button class="tool-btn" onclick="triggerUpload()"><i class="fa-solid fa-folder-open"></i> OPEN</button>
+                <button class="tool-btn" onclick="downloadFile()"><i class="fa-solid fa-download"></i> EXPORT</button>
+                <button class="tool-btn btn-run" onclick="runCode()"><i class="fa-solid fa-play"></i> RUN</button>
+            </div>
         </div>
 
-        <div class="editor-wrapper">
-            <textarea id="code-editor"></textarea>
-            <iframe id="preview-frame"></iframe> <!-- ДЛЯ HTML PREVIEW -->
-        </div>
-
-        <div class="bottom-panel">
-            <div class="panel-header">
-                <div class="panel-tab active">TERMINAL</div>
-                <div class="panel-tab">OUTPUT</div>
-                <div class="panel-tab">PROBLEMS</div>
-                <!-- Кнопка RUN -->
-                <div style="margin-left: auto; color: #0f0; cursor: pointer; font-weight: bold;" onclick="runCode()">
-                    <i class="fa-solid fa-play"></i> RUN CODE
+        <!-- Рабочая зона -->
+        <div class="workspace">
+            <!-- Сайдбар -->
+            <div class="sidebar">
+                <div class="sidebar-title">
+                    <span>EXPLORER</span>
+                    <i class="fa-solid fa-plus" style="cursor:pointer; color:#fff" onclick="createNewFile()" title="New File"></i>
+                </div>
+                <div class="file-list" id="file-list-container">
+                    <!-- Файлы генерируются JS -->
                 </div>
             </div>
-            <div class="terminal-content" id="terminal">
-                <div style="margin-bottom: 10px;">WS3EQR Quantum Shell [v 2.0.4]</div>
-                <div id="term-history"></div>
-                <div class="cmd-line">
-                    <span class="prompt">user@ws3eqr:~$</span>
-                    <input type="text" class="cmd-input" id="term-input" autocomplete="off">
+
+            <!-- Редактор -->
+            <div class="editor-container">
+                <div class="tabs" id="tabs-container">
+                    <!-- Вкладки генерируются JS -->
                 </div>
+                <textarea id="code-editor"></textarea>
             </div>
         </div>
 
-        <div class="status-bar">
-            <div id="status-lang">Python</div>
-            <div>WS3EQR IDE Ready</div>
-            <div>Ln 1, Col 1</div>
+        <!-- Терминал -->
+        <div class="terminal-panel">
+            <div class="term-header">
+                <span style="color:#fff">TERMINAL</span>
+                <span>OUTPUT</span>
+                <span>DEBUG CONSOLE</span>
+            </div>
+            <div class="term-content" id="terminal">
+                <div class="log-line">WS3EQR Shell v3.0.1 Ready...</div>
+                <div class="log-line" style="color: #666">Type code and press RUN to execute.</div>
+                <br>
+            </div>
         </div>
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО РАСШИРЕНИЙ -->
-    <div class="modal" id="mods-modal">
-        <h3 style="margin-bottom: 15px;">EXTENSIONS MARKETPLACE</h3>
-        <div class="ext-item">
-            <i class="fa-brands fa-python fa-2x"></i>
-            <div>
-                <strong>Python Pro IntelliSense</strong><br>
-                <span style="font-size: 0.8rem; color:#888;">AI Autocomplete</span>
-            </div>
-            <button class="ext-btn" onclick="installMod(this)">Install</button>
-        </div>
-        <div class="ext-item">
-            <i class="fa-brands fa-html5 fa-2x"></i>
-            <div>
-                <strong>Live Server HTML</strong><br>
-                <span style="font-size: 0.8rem; color:#888;">Real-time preview</span>
-            </div>
-            <button class="ext-btn" style="background:#333; color:#aaa">Installed</button>
-        </div>
-        <div class="ext-item">
-            <i class="fa-solid fa-palette fa-2x"></i>
-            <div>
-                <strong>Neon Theme Pack</strong><br>
-                <span style="font-size: 0.8rem; color:#888;">Cyberpunk 2077 Colors</span>
-            </div>
-            <button class="ext-btn" onclick="installMod(this)">Install</button>
-        </div>
-        <button onclick="toggleMods()" style="margin-top:15px; width:100%; padding:10px; background:#333; border:none; color:#fff; cursor:pointer;">Close</button>
-    </div>
+    <!-- СКРЫТЫЙ INPUT ДЛЯ ЗАГРУЗКИ ФАЙЛОВ -->
+    <input type="file" id="file-upload" onchange="handleFileSelect(this)">
 
     <!-- СКРИПТЫ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/lua/lua.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
 
     <script>
-        // --- 1. ФАЙЛОВАЯ СИСТЕМА (Эмуляция) ---
-        let files = {
-            'main.py': { 
-                content: "# WS3EQR Studio v2\nprint('Hello World!')", 
-                lang: 'python', 
-                icon: 'fa-brands fa-python',
-                color: '#3572A5'
-            },
-            'index.html': { 
-                content: "<!-- LIVE PREVIEW WORKS! -->\n<h1>Hello WS3EQR</h1>\n<p>This is live HTML</p>\n<style>\n  body { background: #111; color: #fff; font-family: sans-serif; }\n  h1 { color: #8a2be2; }\n</style>", 
-                lang: 'htmlmixed',
-                icon: 'fa-brands fa-html5',
-                color: '#e34c26'
-            },
-            'script.js': { 
-                content: "console.log('System ready');", 
-                lang: 'javascript',
-                icon: 'fa-brands fa-js',
-                color: '#f1e05a'
-            },
-            'game_logic.lua': { 
-                content: "-- Roblox Script\nprint('Loading assets...')", 
-                lang: 'lua',
-                icon: 'fa-solid fa-moon',
-                color: '#000080'
-            }
-        };
-
-        let activeFile = 'main.py';
+        // --- ДАННЫЕ ---
         let editor;
+        let files = {};
+        let activeFileName = '';
 
-        // --- 2. ИНИЦИАЛИЗАЦИЯ ---
+        // --- 1. ЗАГРУЗКА И ВХОД ---
         window.onload = () => {
-            // Интро анимация
+            // Эмуляция загрузки ядра
             setTimeout(() => {
-                document.getElementById('intro-overlay').style.transform = 'translateY(-100%)';
-                document.body.style.opacity = '1';
+                document.getElementById('boot-screen').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('boot-screen').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'flex';
+                }, 800);
             }, 2500);
 
-            // Инициализация редактора
+            // Инициализация CodeMirror
             editor = CodeMirror.fromTextArea(document.getElementById("code-editor"), {
                 theme: "dracula",
                 lineNumbers: true,
-                autoCloseBrackets: true,
                 indentUnit: 4,
                 mode: "python"
             });
             
-            // Обработчик изменений в редакторе
             editor.on('change', () => {
-                if(files[activeFile]) files[activeFile].content = editor.getValue();
+                if(activeFileName && files[activeFileName]) {
+                    files[activeFileName].content = editor.getValue();
+                }
             });
-
-            renderExplorer();
-            renderTabs();
-            openFile('main.py');
         };
 
-        // --- 3. UI ФУНКЦИИ ---
+        // --- 2. УПРАВЛЕНИЕ МЕНЮ ---
+        
+        function startNewProject() {
+            // Создаем чистый проект
+            files = {
+                'main.py': { content: "# New Project\nprint('Hello World')", lang: 'python', icon: 'fa-brands fa-python' }
+            };
+            openIde('main.py');
+            logToTerm("Created new Python project.", "log-success");
+        }
+
+        function loadTemplate() {
+            files = {
+                'main.lua': { content: "-- Roblox Script Template\nlocal part = Instance.new('Part')\npart.Parent = workspace\nprint('Part created!')", lang: 'lua', icon: 'fa-solid fa-moon' },
+                'config.json': { content: "{\n  \"version\": \"1.0\",\n  \"author\": \"ws3eqr\"\n}", lang: 'javascript', icon: 'fa-solid fa-gear' },
+                'readme.md': { content: "# Project Info\nCreated in WS3EQR IDE", lang: 'xml', icon: 'fa-solid fa-file' }
+            };
+            openIde('main.lua');
+            logToTerm("Template loaded successfully.", "log-success");
+        }
+
+        function returnToMenu() {
+            document.getElementById('ide-interface').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+        }
+
+        function openIde(fileNameToOpen) {
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('ide-interface').style.display = 'flex';
+            renderExplorer();
+            switchFile(fileNameToOpen);
+        }
+
+        // --- 3. ФАЙЛОВАЯ СИСТЕМА ---
 
         function renderExplorer() {
-            const tree = document.getElementById('file-tree');
-            tree.innerHTML = '';
-            
-            // Папка проекта (имитация)
-            const root = document.createElement('div');
-            root.innerHTML = `<div class="tree-item" style="font-weight:bold; color:#fff;"><i class="fa-solid fa-chevron-down"></i> WS3EQR-PROJECT</div>`;
-            tree.appendChild(root);
-
-            const folderContent = document.createElement('div');
-            folderContent.className = 'folder-content';
-
-            Object.keys(files).forEach(filename => {
-                const file = files[filename];
-                const div = document.createElement('div');
-                div.className = `tree-item ${activeFile === filename ? 'active' : ''}`;
-                div.innerHTML = `<i class="${file.icon}" style="color:${file.color}"></i> ${filename}`;
-                div.onclick = () => openFile(filename);
-                folderContent.appendChild(div);
-            });
-
-            tree.appendChild(folderContent);
-        }
-
-        function renderTabs() {
-            const container = document.getElementById('tabs-container');
+            const container = document.getElementById('file-list-container');
+            const tabsContainer = document.getElementById('tabs-container');
             container.innerHTML = '';
-            
-            Object.keys(files).forEach(filename => {
+            tabsContainer.innerHTML = '';
+
+            Object.keys(files).forEach(fname => {
+                // Сайдбар
                 const div = document.createElement('div');
-                div.className = `tab ${activeFile === filename ? 'active' : ''}`;
-                div.innerHTML = `
-                    <i class="${files[filename].icon}" style="color:${files[filename].color}"></i> 
-                    ${filename} 
-                    <i class="fa-solid fa-xmark tab-close" onclick="closeFile('${filename}', event)"></i>
-                `;
-                div.onclick = () => openFile(filename);
+                div.className = `file-item ${activeFileName === fname ? 'active' : ''}`;
+                div.innerHTML = `<i class="${files[fname].icon}"></i> ${fname}`;
+                div.onclick = () => switchFile(fname);
                 container.appendChild(div);
+
+                // Вкладки
+                const tab = document.createElement('div');
+                tab.className = `tab ${activeFileName === fname ? 'active' : ''}`;
+                tab.innerHTML = `<i class="${files[fname].icon}"></i> ${fname}`;
+                tab.onclick = () => switchFile(fname);
+                tabsContainer.appendChild(tab);
             });
         }
 
-        function openFile(filename) {
-            if (!files[filename]) return;
-            activeFile = filename;
+        function switchFile(fname) {
+            activeFileName = fname;
+            const file = files[fname];
             
-            const file = files[filename];
+            // Определяем режим подсветки
+            let mode = 'python';
+            if(file.lang === 'lua') mode = 'lua';
+            if(file.lang === 'javascript') mode = 'javascript';
+            if(file.lang === 'html') mode = 'htmlmixed';
+
+            editor.setOption("mode", mode);
             editor.setValue(file.content);
-            editor.setOption("mode", file.lang);
-            
-            // Скрыть/показать превью
-            const preview = document.getElementById('preview-frame');
-            if (filename.endsWith('.html')) {
-                // Если это HTML, включаем режим превью при запуске
-                document.getElementById('status-lang').innerText = "HTML (Live Preview Available)";
-            } else {
-                preview.style.display = 'none';
-                document.getElementById('status-lang').innerText = file.lang.toUpperCase();
-            }
-
             renderExplorer();
-            renderTabs();
-        }
-
-        function closeFile(filename, e) {
-            e.stopPropagation();
-            if(Object.keys(files).length <= 1) return; // Не закрывать последний
-            delete files[filename];
-            if(activeFile === filename) {
-                activeFile = Object.keys(files)[0];
-                openFile(activeFile);
-            }
-            renderExplorer();
-            renderTabs();
         }
 
         function createNewFile() {
-            const name = prompt("Enter file name (e.g. test.py):");
+            const name = prompt("File name (e.g. test.js):");
             if(name) {
                 let lang = 'python';
-                let icon = 'fa-brands fa-python';
-                let color = '#3572A5';
+                let icon = 'fa-solid fa-file';
+                
+                if(name.endsWith('.js')) { lang = 'javascript'; icon = 'fa-brands fa-js'; }
+                if(name.endsWith('.lua')) { lang = 'lua'; icon = 'fa-solid fa-moon'; }
+                if(name.endsWith('.html')) { lang = 'html'; icon = 'fa-brands fa-html5'; }
+                if(name.endsWith('.py')) { lang = 'python'; icon = 'fa-brands fa-python'; }
 
-                if(name.endsWith('.js')) { lang = 'javascript'; icon = 'fa-brands fa-js'; color='#f1e05a'; }
-                if(name.endsWith('.html')) { lang = 'htmlmixed'; icon = 'fa-brands fa-html5'; color='#e34c26'; }
-                if(name.endsWith('.lua')) { lang = 'lua'; icon = 'fa-solid fa-moon'; color='#000080'; }
-
-                files[name] = { content: "", lang: lang, icon: icon, color: color };
-                openFile(name);
+                files[name] = { content: "", lang: lang, icon: icon };
+                switchFile(name);
+                logToTerm(`File ${name} created.`, "log-info");
             }
         }
 
-        // --- 4. КОМПИЛЯЦИЯ / ЗАПУСК ---
+        // --- 4. ЗАГРУЗКА И СОХРАНЕНИЕ (ФУНКЦИОНАЛ) ---
+
+        function triggerUpload() {
+            document.getElementById('file-upload').click();
+        }
+
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if(!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const content = e.target.result;
+                const name = file.name;
+                
+                // Определяем тип
+                let lang = 'python';
+                let icon = 'fa-solid fa-file';
+                if(name.endsWith('.js')) { lang = 'javascript'; icon = 'fa-brands fa-js'; }
+                if(name.endsWith('.lua')) { lang = 'lua'; icon = 'fa-solid fa-moon'; }
+                if(name.endsWith('.html')) { lang = 'html'; icon = 'fa-brands fa-html5'; }
+
+                files[name] = { content: content, lang: lang, icon: icon };
+                
+                // Если мы были в меню, идем в IDE
+                if(document.getElementById('dashboard').style.display !== 'none') {
+                    openIde(name);
+                } else {
+                    switchFile(name);
+                }
+                logToTerm(`File ${name} imported from disk.`, "log-success");
+            };
+            reader.readAsText(file);
+        }
+
+        function downloadFile() {
+            const file = files[activeFileName];
+            const blob = new Blob([file.content], { type: "text/plain" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = activeFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            logToTerm(`Exported ${activeFileName} to Downloads.`, "log-success");
+        }
+
+        // --- 5. КОМПИЛЯЦИЯ ---
+
         function runCode() {
-            const termHistory = document.getElementById('term-history');
-            const file = files[activeFile];
+            const term = document.getElementById('terminal');
+            logToTerm(`> Executing ${activeFileName}...`, "log-info");
             
-            // Лог запуска
-            termHistory.innerHTML += `<div style="color: #888;">> Executing ${activeFile}...</div>`;
-            
-            if (activeFile.endsWith('.html')) {
-                // Реальный рендеринг HTML
-                const preview = document.getElementById('preview-frame');
-                preview.style.display = 'block';
-                const doc = preview.contentDocument || preview.contentWindow.document;
-                doc.open();
-                doc.write(file.content);
-                doc.close();
-                termHistory.innerHTML += `<div style="color: #0f0;">> Live Server Started. Showing preview...</div>`;
-            } else if (activeFile.endsWith('.py')) {
-                // Имитация Python
-                setTimeout(() => {
-                    const output = file.content.includes('print') ? "Hello World!" : "Process finished with exit code 0";
-                    termHistory.innerHTML += `<div>${output}</div>`;
-                    termHistory.innerHTML += `<div style="color: #0f0;">> Done.</div>`;
-                }, 500);
-            } else {
-                // Общий успех
-                setTimeout(() => {
-                    termHistory.innerHTML += `<div style="color: #0f0;">> Script executed successfully.</div>`;
-                }, 500);
-            }
-            
-            // Скролл вниз
-            const terminal = document.getElementById('terminal');
-            terminal.scrollTop = terminal.scrollHeight;
-        }
-
-        // --- 5. ТЕРМИНАЛ (Интерактив) ---
-        document.getElementById('term-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                const val = this.value;
-                const history = document.getElementById('term-history');
-                history.innerHTML += `<div><span class="prompt">user@ws3eqr:~$</span> ${val}</div>`;
-                
-                if(val === 'clear') history.innerHTML = '';
-                else if(val === 'help') history.innerHTML += `<div style="color:#aaa">Commands: run, clear, ls, help, install</div>`;
-                else if(val === 'ls') history.innerHTML += `<div>${Object.keys(files).join('  ')}</div>`;
-                else if(val.startsWith('install')) history.innerHTML += `<div style="color:#0f0">Installing package... Done.</div>`;
-                else history.innerHTML += `<div style="color:#f00">Command not found: ${val}</div>`;
-                
-                this.value = '';
-                document.getElementById('terminal').scrollTop = document.getElementById('terminal').scrollHeight;
-            }
-        });
-
-        // --- 6. МОДЫ ---
-        function toggleMods() {
-            const modal = document.getElementById('mods-modal');
-            modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function installMod(btn) {
-            btn.innerText = "Installing...";
             setTimeout(() => {
-                btn.innerText = "Installed";
-                btn.style.background = "#333";
-                btn.style.color = "#aaa";
-                alert("Extension activated successfully!");
-            }, 1000);
+                if(activeFileName.endsWith('.py')) {
+                    if(editor.getValue().includes('print')) {
+                        logToTerm("Hello World!", ""); 
+                    }
+                    logToTerm("Process finished with exit code 0", "log-success");
+                } 
+                else if(activeFileName.endsWith('.html')) {
+                    logToTerm("Starting Live Server on port 5500...", "log-info");
+                    logToTerm("Opening browser preview...", "log-success");
+                }
+                else {
+                    logToTerm("Script executed successfully.", "log-success");
+                }
+                term.scrollTop = term.scrollHeight;
+            }, 600);
+        }
+
+        function logToTerm(msg, className) {
+            const term = document.getElementById('terminal');
+            const div = document.createElement('div');
+            div.className = `log-line ${className}`;
+            div.innerText = msg;
+            term.appendChild(div);
+            term.scrollTop = term.scrollHeight;
         }
 
     </script>
