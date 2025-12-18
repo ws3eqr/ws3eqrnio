@@ -3,348 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WS3EQR | Biography</title>
+    <title>WS3EQR | DOSSIER</title>
+    
+    <!-- ИКОНКИ И ШРИФТЫ -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
     <style>
-        /* --- Сброс стилей и шрифты --- */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        /* --- 0. БАЗОВЫЕ НАСТРОЙКИ (СТИЛЬ IDE) --- */
+        :root {
+            --bg: #000000;
+            --panel: rgba(20, 20, 20, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #8a2be2; /* Фиолетовый неон */
+            --accent-glow: rgba(138, 43, 226, 0.5);
+            --text-main: #e0e0e0;
+            --text-dim: #777;
         }
 
-        body {
-            background-color: #000;
-            color: #fff;
-            overflow-x: hidden;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* --- Экраны (Секции) --- */
-        .screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none; /* Скрываем все по умолчанию */
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 1s ease-in-out;
-        }
-
-        /* Активный экран */
-        .screen.active {
-            display: flex;
-            opacity: 1;
-        }
-
-        /* --- 1. INTRO SCREEN --- */
-        #intro-screen {
-            background-color: #000;
-            z-index: 100;
-            display: flex; /* Интро видно сразу */
-            opacity: 1;
-        }
-
-        .glitch-text {
-            font-size: 4rem;
-            font-weight: bold;
-            color: #fff;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            opacity: 0;
-            animation: introAnim 4s forwards;
-        }
-
-        @keyframes introAnim {
-            0% { opacity: 0; transform: scale(0.9); }
-            10% { opacity: 1; transform: scale(1); text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 40px #fff; } /* Резкое появление и свечение */
-            80% { opacity: 1; text-shadow: 0 0 5px #fff; }
-            100% { opacity: 0; transform: scale(1.1); } /* Уход в черноту */
-        }
-
-        /* --- 2. HOME SCREEN (MENU) --- */
-        #home-screen {
-            background-color: #1a1a1a; /* Минималистичный серый */
-        }
-
-        h1 { font-size: 2.5rem; margin-bottom: 20px; font-weight: 300; }
-        .subtitle { color: #888; margin-bottom: 40px; }
-
-        /* --- 3. BIO SCREEN --- */
-        #bio-screen {
-            background-color: #121212;
-            padding: 20px;
-            justify-content: flex-start;
-            overflow-y: auto; /* Прокрутка если контент длинный */
-            padding-top: 50px;
-        }
-
-        .bio-card {
-            background: #1e1e1e;
-            border-radius: 15px;
-            padding: 30px;
-            max-width: 600px;
-            width: 90%;
-            text-align: left;
-            border: 1px solid #333;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-        }
-
-        .bio-item { margin-bottom: 15px; }
-        .bio-label { color: #888; font-size: 0.9rem; margin-bottom: 5px; }
-        .bio-value { font-size: 1.1rem; color: #eee; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
         
-        /* Теги для языков */
-        .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ФОНОВАЯ СЕТКА */
+        body::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                linear-gradient(rgba(138, 43, 226, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(138, 43, 226, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px; z-index: -1;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+        }
+
+        /* --- 1. ЗАГРУЗКА (INTRO) --- */
+        #intro {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s ease;
+        }
+        .intro-text {
+            font-family: 'JetBrains Mono'; font-size: 3rem; font-weight: 800; color: #fff;
+            letter-spacing: 5px; animation: glitch 2s infinite alternate;
+        }
+        .loader-bar {
+            width: 150px; height: 2px; background: #222; margin-top: 20px; position: relative;
+        }
+        .loader-prog {
+            position: absolute; left: 0; top: 0; height: 100%; width: 0%;
+            background: var(--accent); box-shadow: 0 0 10px var(--accent);
+            animation: load 2s forwards ease-in-out;
+        }
+
+        @keyframes glitch {
+            0% { text-shadow: 2px 2px 0px #ff00ff; } 100% { text-shadow: -2px 2px 0px #00ffff; }
+        }
+        @keyframes load { to { width: 100%; } }
+
+        /* --- 2. ГЛАВНЫЙ КОНТЕЙНЕР --- */
+        .container {
+            width: 90%; max-width: 1100px; height: 85vh;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 20px; backdrop-filter: blur(20px);
+            display: flex; overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            opacity: 0; transform: scale(0.95); transition: 0.5s ease;
+        }
+
+        /* --- 3. САЙДБАР (СЛЕВА) --- */
+        .sidebar {
+            width: 280px; background: rgba(10, 10, 10, 0.8);
+            border-right: 1px solid var(--border);
+            padding: 30px 20px; display: flex; flex-direction: column;
+        }
+
+        .profile { text-align: center; margin-bottom: 40px; }
+        .avatar {
+            width: 100px; height: 100px; border-radius: 50%; background: #111;
+            margin: 0 auto 15px; border: 2px solid #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; font-weight: bold; color: #fff;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .profile h2 { font-family: 'JetBrains Mono'; font-size: 1.2rem; letter-spacing: 1px; }
+        .role { color: var(--accent); font-size: 0.8rem; text-transform: uppercase; font-weight: bold; }
+
+        .nav-btn {
+            background: transparent; border: none; color: #888;
+            padding: 12px 15px; text-align: left; font-size: 0.95rem;
+            cursor: pointer; border-radius: 8px; margin-bottom: 5px;
+            transition: 0.3s; display: flex; align-items: center; gap: 12px;
+        }
+        .nav-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .nav-btn.active { background: var(--accent); color: #fff; box-shadow: 0 0 15px var(--accent-glow); }
+
+        .socials { margin-top: auto; display: flex; gap: 15px; justify-content: center; }
+        .social-link { color: #555; font-size: 1.2rem; transition: 0.3s; text-decoration: none; }
+        .social-link:hover { color: #fff; transform: scale(1.1); }
+
+        /* --- 4. КОНТЕНТ (СПРАВА) --- */
+        .content-area { flex: 1; position: relative; overflow: hidden; }
+
+        .page {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            padding: 40px; overflow-y: auto;
+            opacity: 0; transform: translateY(20px); transition: 0.4s ease;
+            pointer-events: none;
+        }
+        .page.active { opacity: 1; transform: translateY(0); pointer-events: all; }
+
+        h1 { font-family: 'JetBrains Mono'; font-size: 2.5rem; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        /* КАРТОЧКИ ДАННЫХ */
+        .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--border);
+            padding: 20px; border-radius: 12px; transition: 0.3s;
+        }
+        .card:hover { border-color: var(--accent); background: rgba(255,255,255,0.04); }
+        .card-label { color: var(--text-dim); font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px; }
+        .card-val { font-size: 1.1rem; font-family: 'JetBrains Mono'; color: #fff; }
+
+        /* ТЕГИ НАВЫКОВ */
+        .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
         .tag {
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.85rem;
-            font-weight: bold;
+            padding: 6px 12px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;
+            background: #222; color: #fff; border: 1px solid #333;
         }
-        .tag-js { background: #f7df1e; color: #000; }
-        .tag-lua { background: #000080; color: #fff; }
-        .tag-py { background: #306998; color: #fff; }
-        .tag-html { background: #e34c26; color: #fff; }
-        .tag-hard { background: #b00b69; color: #fff; } /* Malbolge */
-        .tag-exp { background: #333; color: #ccc; border: 1px solid #555; }
+        .tag.js { color: #f7df1e; border-color: #f7df1e; background: rgba(247, 223, 30, 0.1); }
+        .tag.lua { color: #000080; border-color: #5c5cff; background: rgba(0, 0, 128, 0.2); }
+        .tag.py { color: #306998; border-color: #306998; background: rgba(48, 105, 152, 0.1); }
+        .tag.html { color: #e34c26; border-color: #e34c26; background: rgba(227, 76, 38, 0.1); }
+        .tag.hard { color: #ff0055; border-color: #ff0055; background: rgba(255, 0, 85, 0.1); box-shadow: 0 0 10px rgba(255,0,85,0.2); }
 
-        /* --- 4. DETAILS SCREEN --- */
-        #details-screen {
-            background-color: #0f0f0f;
-            padding: 20px;
-        }
-
-        .project-link {
-            display: inline-block;
-            margin: 20px 0;
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #0088cc, #005f8f);
-            color: white;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: bold;
-            transition: transform 0.2s;
-        }
-        .project-link:hover { transform: scale(1.05); }
-
-        .feedback-area {
-            margin-top: 30px;
-            width: 100%;
-            max-width: 500px;
-        }
+        /* ФОРМА */
         input, textarea {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            background: #222;
-            border: 1px solid #444;
-            color: #fff;
-            border-radius: 5px;
+            width: 100%; background: #0a0a0a; border: 1px solid var(--border);
+            padding: 15px; color: #fff; border-radius: 8px; margin-bottom: 15px; font-family: 'JetBrains Mono';
         }
-        textarea { height: 100px; resize: none; }
+        input:focus, textarea:focus { border-color: var(--accent); outline: none; }
+        
+        .btn-action {
+            background: var(--accent); color: #fff; border: none; padding: 12px 25px;
+            border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s;
+            display: inline-block; text-decoration: none;
+        }
+        .btn-action:hover { background: #fff; color: #000; box-shadow: 0 0 20px var(--accent-glow); }
 
-        /* --- Кнопки навигации --- */
-        .btn {
-            padding: 12px 30px;
-            background: transparent;
-            border: 2px solid #fff;
-            color: #fff;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 20px;
-            border-radius: 30px;
-        }
-
-        .btn:hover {
-            background: #fff;
-            color: #000;
-        }
-
-        .btn-primary {
-            background: #fff;
-            color: #000;
-        }
-        .btn-primary:hover {
-            background: #ccc;
-        }
-
-        .btn-back {
-            margin-top: 40px;
-            border-color: #555;
-            color: #888;
-        }
-        .btn-back:hover {
-            border-color: #fff;
-            color: #fff;
-        }
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
 
     </style>
 </head>
 <body>
 
-    <!-- 1. ИНТРО (Загрузка) -->
-    <div id="intro-screen" class="screen active">
-        <div class="glitch-text">ws3eqr</div>
+    <!-- 1. ЗАГРУЗКА -->
+    <div id="intro">
+        <div class="intro-text">WS3EQR</div>
+        <div class="loader-bar"><div class="loader-prog"></div></div>
     </div>
 
-    <!-- 2. ГЛАВНОЕ МЕНЮ -->
-    <div id="home-screen" class="screen">
-        <h1>Добро пожаловать</h1>
-        <p class="subtitle">Сайт с моей биографией</p>
-        <button class="btn btn-primary" onclick="showBio()">Просмотреть биографию</button>
-    </div>
-
-    <!-- 3. БИОГРАФИЯ -->
-    <div id="bio-screen" class="screen">
-        <div class="bio-card">
-            <h2 style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px;">Личное дело</h2>
-            
-            <div class="bio-item">
-                <div class="bio-label">ФИО</div>
-                <div class="bio-value">Ваулин Константин Романович</div>
-            </div>
-
-            <div class="bio-item">
-                <div class="bio-label">Возраст / Дата рождения</div>
-                <div class="bio-value">14 лет (26.09.2011)</div>
-            </div>
-
-            <div class="bio-item">
-                <div class="bio-label">Обучение</div>
-                <div class="bio-value">Забайкальский край, Чита, МОУ СОШ Маккавеево</div>
-            </div>
-
-            <div class="bio-item">
-                <div class="bio-label">Знания языков</div>
-                <div class="tags">
-                    <span class="tag tag-js">JavaScript</span>
-                    <span class="tag tag-lua">Luau</span>
-                    <span class="tag tag-lua">Lua</span>
-                    <span class="tag tag-py">Python</span>
-                    <span class="tag tag-html">HTML</span>
-                </div>
-            </div>
-
-            <div class="bio-item">
-                <div class="bio-label">Изучаю сейчас</div>
-                <div class="tags">
-                    <span class="tag tag-exp">C++</span>
-                    <span class="tag tag-exp">C#</span>
-                    <span class="tag tag-exp">ANSI C</span>
-                    <span class="tag tag-exp">Rust</span>
-                    <span class="tag tag-hard">Malbolge 💀</span>
-                </div>
-            </div>
-
-            <div class="bio-item">
-                <div class="bio-label">Опыт работы</div>
-                <div class="tags" style="flex-direction: column; align-items: flex-start;">
-                    <span class="tag tag-exp">Python-разработчик: > 2 лет</span>
-                    <span class="tag tag-exp">Дизайнер: > 8 месяцев</span>
-                    <span class="tag tag-exp">Веб-дизайнер: 4 месяца</span>
-                    <span class="tag tag-exp">Lua-разработчик: > 2 месяцев</span>
-                    <span class="tag tag-exp">Тех. администратор: 18 дней</span>
-                </div>
-            </div>
-        </div>
-
-        <button class="btn" onclick="showDetails()">Подробно & Проекты</button>
-        <button class="btn btn-back" onclick="goHome()">Вернуться назад</button>
-    </div>
-
-    <!-- 4. ПОДРОБНО / ОБРАТНАЯ СВЯЗЬ -->
-    <div id="details-screen" class="screen">
-        <h2>Мои проекты</h2>
-        <p style="color:#888; margin-top:10px;">Основной канал разработки</p>
+    <!-- 2. ОСНОВНОЙ КОНТЕЙНЕР -->
+    <div class="container" id="main-ui">
         
-        <a href="https://t.me/ws3eqroblox" target="_blank" class="project-link">
-            ✈️ ws3eqroblox
-        </a>
+        <!-- САЙДБАР -->
+        <div class="sidebar">
+            <div class="profile">
+                <div class="avatar">WS</div>
+                <h2>WS3EQR</h2>
+                <div class="role">Fullstack Dev</div>
+            </div>
 
-        <div class="feedback-area">
-            <h3 style="margin-bottom: 15px;">Обратная связь</h3>
-            <p style="font-size: 0.8rem; color: #555; margin-bottom: 10px;">
-                *Демо-режим. Для реального ответа пишите в Telegram.
-            </p>
-            <input type="text" id="fb-name" placeholder="Ваше имя">
-            <textarea id="fb-msg" placeholder="Сообщение..."></textarea>
-            <button class="btn" style="width: 100%; border-color: #0088cc; color: #0088cc;" onclick="sendFeedback()">Отправить</button>
+            <nav>
+                <button class="nav-btn active" onclick="showPage('home')"><i class="fa-solid fa-house"></i> Главная</button>
+                <button class="nav-btn" onclick="showPage('bio')"><i class="fa-solid fa-user-secret"></i> Личное дело</button>
+                <button class="nav-btn" onclick="showPage('skills')"><i class="fa-solid fa-code"></i> Навыки</button>
+                <button class="nav-btn" onclick="showPage('contact')"><i class="fa-solid fa-envelope"></i> Связь</button>
+            </nav>
+
+            <div class="socials">
+                <a href="https://t.me/ws3eqroblox" class="social-link"><i class="fa-brands fa-telegram"></i></a>
+                <a href="https://github.com/ws3eqr" class="social-link"><i class="fa-brands fa-github"></i></a>
+            </div>
         </div>
 
-        <button class="btn btn-back" onclick="goHome()">На главный экран</button>
+        <!-- КОНТЕНТ -->
+        <div class="content-area">
+            
+            <!-- ГЛАВНАЯ -->
+            <div id="home" class="page active">
+                <div style="display:flex; flex-direction:column; justify-content:center; height:100%;">
+                    <h1 style="border:none; font-size:3.5rem;">HELLO, WORLD.</h1>
+                    <p style="font-size:1.2rem; color:#888; max-width:600px; line-height:1.6;">
+                        Меня зовут <span style="color:var(--accent)">Ваулин Константин</span>. 
+                        Я создаю сложные системы, пишу код и занимаюсь дизайном. 
+                        Добро пожаловать в мое цифровое пространство.
+                    </p>
+                    <div style="margin-top:40px; display:flex; gap:15px;">
+                        <a href="#" onclick="showPage('bio')" class="btn-action">Открыть досье</a>
+                        <a href="links.html" class="btn-action" style="background:transparent; border:1px solid #fff;">Переходник</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- БИОГРАФИЯ -->
+            <div id="bio" class="page">
+                <h1>ЛИЧНОЕ ДЕЛО</h1>
+                <div class="info-grid">
+                    <div class="card">
+                        <div class="card-label">ФИО</div>
+                        <div class="card-val">Ваулин Константин Романович</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Возраст</div>
+                        <div class="card-val">14 лет (26.09.2011)</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Локация</div>
+                        <div class="card-val">Чита, Забайкальский край</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-label">Образование</div>
+                        <div class="card-val">МОУ СОШ Маккавеево</div>
+                    </div>
+                    <div class="card" style="grid-column: span 2;">
+                        <div class="card-label">Опыт работы</div>
+                        <div class="card-val" style="font-size: 0.9rem; line-height: 1.6;">
+                            • Python-разработчик: > 2 лет<br>
+                            • Дизайнер: > 8 месяцев<br>
+                            • Web-дизайнер: 4 месяца<br>
+                            • Lua-разработчик: > 2 месяцев
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- НАВЫКИ -->
+            <div id="skills" class="page">
+                <h1>СТЕК ТЕХНОЛОГИЙ</h1>
+                
+                <h3 style="margin-bottom:15px; color:#aaa;">Владею:</h3>
+                <div class="tags">
+                    <span class="tag py">Python</span>
+                    <span class="tag lua">Lua / Luau</span>
+                    <span class="tag js">JavaScript</span>
+                    <span class="tag html">HTML5 / CSS3</span>
+                </div>
+
+                <h3 style="margin-top:30px; margin-bottom:15px; color:#aaa;">Изучаю сейчас:</h3>
+                <div class="tags">
+                    <span class="tag">C++</span>
+                    <span class="tag">C#</span>
+                    <span class="tag">ANSI C</span>
+                    <span class="tag">Rust</span>
+                    <span class="tag hard">Malbolge 💀</span>
+                </div>
+
+                <div class="card" style="margin-top: 40px; border-color: var(--accent);">
+                    <div class="card-label">Текущий уровень</div>
+                    <div class="card-val">Fullstack Developer / GameDev Enthusiast</div>
+                </div>
+            </div>
+
+            <!-- СВЯЗЬ -->
+            <div id="contact" class="page">
+                <h1>ОБРАТНАЯ СВЯЗЬ</h1>
+                <p style="margin-bottom:20px; color:#666;">Отправьте сообщение (Демо-режим) или пишите в Telegram.</p>
+                
+                <input type="text" id="name" placeholder="Ваше имя">
+                <textarea id="msg" placeholder="Сообщение..." rows="5"></textarea>
+                <button class="btn-action" onclick="sendMsg()">ОТПРАВИТЬ</button>
+
+                <div style="margin-top: 40px;">
+                    <a href="https://t.me/ws3eqroblox" class="card" style="display:block; text-decoration:none; text-align:center;">
+                        <i class="fa-brands fa-telegram" style="font-size:2rem; color:#0088cc; margin-bottom:10px;"></i>
+                        <div class="card-val">Написать в Telegram</div>
+                    </a>
+                </div>
+            </div>
+
+        </div>
     </div>
 
     <script>
-        // --- ЛОГИКА САЙТА ---
-
-        // 1. Управление Интро
-        window.onload = function() {
+        // АНИМАЦИЯ ВХОДА
+        window.onload = () => {
             setTimeout(() => {
-                // Скрываем интро
-                document.getElementById('intro-screen').style.opacity = '0';
-                
-                // Ждем пока анимация затухания пройдет (1 сек) и включаем Главный экран
+                document.getElementById('intro').style.opacity = '0';
                 setTimeout(() => {
-                    document.getElementById('intro-screen').style.display = 'none';
-                    document.getElementById('home-screen').classList.add('active');
-                }, 1000);
-            }, 4000); // Интро висит 4 секунды
+                    document.getElementById('intro').style.display = 'none';
+                    document.getElementById('main-ui').style.opacity = '1';
+                    document.getElementById('main-ui').style.transform = 'scale(1)';
+                }, 800);
+            }, 2200);
         };
 
-        // 2. Функция переключения экранов
-        function switchScreen(screenId) {
-            // Скрываем все экраны
-            const screens = document.querySelectorAll('.screen');
-            screens.forEach(s => {
-                s.classList.remove('active');
-                if(s.id !== 'intro-screen') s.style.display = 'none'; // Убираем из потока
-            });
-
-            // Показываем нужный
-            const activeScreen = document.getElementById(screenId);
-            activeScreen.style.display = 'flex';
+        // НАВИГАЦИЯ
+        function showPage(pageId) {
+            // Скрываем все страницы
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            // Убираем активный класс у кнопок
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
-            // Небольшая задержка для плавности opacity
-            setTimeout(() => {
-                activeScreen.classList.add('active');
-            }, 50);
+            // Показываем нужную
+            document.getElementById(pageId).classList.add('active');
+            
+            // Подсвечиваем кнопку
+            // (Простой поиск кнопки по onclick)
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(btn => {
+                if(btn.getAttribute('onclick').includes(pageId)) {
+                    btn.classList.add('active');
+                }
+            });
         }
 
-        // Кнопки
-        function showBio() {
-            switchScreen('bio-screen');
-        }
-
-        function showDetails() {
-            switchScreen('details-screen');
-        }
-
-        function goHome() {
-            switchScreen('home-screen');
-        }
-
-        // Имитация отправки формы
-        function sendFeedback() {
-            const name = document.getElementById('fb-name').value;
-            const msg = document.getElementById('fb-msg').value;
-
-            if(name && msg) {
-                alert(`Спасибо, ${name}! Ваше сообщение отправлено (Визуально). Для реальной связи лучше пишите в ТГ.`);
-                document.getElementById('fb-name').value = '';
-                document.getElementById('fb-msg').value = '';
+        // ОТПРАВКА СООБЩЕНИЯ
+        function sendMsg() {
+            const n = document.getElementById('name').value;
+            const m = document.getElementById('msg').value;
+            if(n && m) {
+                alert(`Сообщение отправлено!\nИмя: ${n}\nТекст: ${m}\n(Визуально)`);
+                document.getElementById('name').value = '';
+                document.getElementById('msg').value = '';
             } else {
-                alert('Пожалуйста, заполните поля');
+                alert("Заполните все поля!");
             }
         }
     </script>
