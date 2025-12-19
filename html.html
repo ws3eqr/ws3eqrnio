@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WS3EQR | EVO DESKTOP AI</title>
+    
+    <!-- ШРИФТЫ И ИКОНКИ -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- 0. CORE STYLES --- */
+        :root {
+            --bg: #000000;
+            --panel: rgba(15, 15, 15, 0.85);
+            --accent: #8a2be2;
+            --accent-glow: rgba(138, 43, 226, 0.6);
+            --text: #e0e0e0;
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; font-family: 'Inter', sans-serif; cursor: none; /* Скрываем стандартный курсор для движка */ }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- 1. CUSTOM CURSOR (Чтобы стикманы могли его красть) --- */
+        #custom-cursor {
+            position: fixed; top: 0; left: 0;
+            width: 20px; height: 20px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="2"><path d="M5.5 3.21l10.8 15.6-5.6-.6-2.6 5.8-3.4-1.4 2.5-5.6H1.8z"/></svg>') no-repeat;
+            pointer-events: none; z-index: 10000;
+            transition: transform 0.1s;
+        }
+
+        /* --- 2. MENU (SETTINGS) --- */
+        #menu-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
+            z-index: 500;
+            transition: opacity 0.8s ease;
+        }
+
+        .menu-container {
+            width: 800px; background: var(--panel);
+            border: 1px solid var(--border); border-radius: 20px;
+            padding: 40px; box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            backdrop-filter: blur(20px);
+            animation: slideUp 0.8s cubic-bezier(0.2, 1, 0.3, 1);
+        }
+
+        h1 {
+            font-family: 'JetBrains Mono'; font-size: 3rem; text-align: center;
+            margin-bottom: 10px; color: #fff; text-shadow: 0 0 20px var(--accent);
+        }
+        .subtitle { text-align: center; color: #666; margin-bottom: 40px; font-family: 'JetBrains Mono'; }
+
+        .settings-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;
+        }
+
+        .setting-group h3 { color: var(--accent); margin-bottom: 15px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .control-row {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        /* Custom Checkbox */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333; transition: .4s; border-radius: 20px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* Play Button */
+        .btn-play {
+            width: 100%; padding: 20px; font-size: 1.5rem; font-weight: 800;
+            background: var(--accent); color: #fff; border: none; border-radius: 12px;
+            cursor: none; transition: 0.3s; text-transform: uppercase; letter-spacing: 3px;
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+        .btn-play:hover { transform: scale(1.02); box-shadow: 0 0 50px var(--accent); background: #fff; color: #000; }
+
+        /* --- 3. GAME WORLD --- */
+        #world {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #050505;
+            z-index: 100; display: none;
+        }
+        
+        /* Фон "Матрицы" */
+        #matrix-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; opacity: 0.3; pointer-events: none;
+        }
+
+        /* Интерфейс игры */
+        .hud {
+            position: absolute; top: 20px; left: 20px; z-index: 200;
+            display: flex; gap: 10px; pointer-events: all;
+        }
+        .hud-btn {
+            background: rgba(20,20,20,0.8); border: 1px solid var(--border);
+            color: #fff; padding: 10px 15px; border-radius: 8px; font-weight: bold;
+            transition: 0.2s;
+        }
+        .hud-btn:hover { background: var(--accent); border-color: var(--accent); }
+
+        /* Канвас для рисования */
+        canvas { display: block; width: 100%; height: 100%; z-index: 10; }
+
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+    <!-- КАСТОМНЫЙ КУРСОР -->
+    <div id="custom-cursor"></div>
+
+    <!-- МЕНЮ НАСТРОЕК -->
+    <div id="menu-screen">
+        <div class="menu-container">
+            <h1>WS3EQR EVO</h1>
+            <div class="subtitle">ARTIFICIAL LIFE SIMULATION // V 9.0</div>
+
+            <div class="settings-grid">
+                <div class="setting-group">
+                    <h3>World Physics</h3>
+                    <div class="control-row">
+                        <span>Gravity</span>
+                        <label class="switch"><input type="checkbox" checked id="opt-grav"><span class="slider"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span>Wall Collisions</span>
+                        <label class="switch"><input type="checkbox" checked id="opt-coll"><span class="slider"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span>Mouse Interaction</span>
+                        <label class="switch"><input type="checkbox" checked id="opt-mouse"><span class="slider"></span></label>
+                    </div>
+                </div>
+                <div class="setting-group">
+                    <h3>Stickman AI</h3>
+                    <div class="control-row">
+                        <span>Theft Logic (Steal Mouse)</span>
+                        <label class="switch"><input type="checkbox" checked id="opt-steal"><span class="slider"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span>Socializing</span>
+                        <label class="switch"><input type="checkbox" checked id="opt-social"><span class="slider"></span></label>
+                    </div>
+                    <div class="control-row">
+                        <span>Hunger System</span>
+                        <label class="switch"><input type="checkbox" checked id="opt-hunger"><span class="slider"></span></label>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-play" onclick="startGame()">INITIALIZE WORLD</button>
+        </div>
+    </div>
+
+    <!-- ИГРОВОЙ МИР -->
+    <div id="world">
+        <canvas id="matrix-bg"></canvas>
+        <canvas id="game-canvas"></canvas>
+        
+        <div class="hud">
+            <button class="hud-btn" onclick="spawnStickman()">+ SPAWN ENTITY</button>
+            <button class="hud-btn" onclick="spawnFood()">+ DROP FOOD</button>
+            <button class="hud-btn" onclick="resetWorld()">⚠ NUKE WORLD</button>
+            <button class="hud-btn" onclick="location.reload()">EXIT</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CORE SYSTEM ---
+        const cursor = document.getElementById('custom-cursor');
+        const gameCanvas = document.getElementById('game-canvas');
+        const bgCanvas = document.getElementById('matrix-bg');
+        const ctx = gameCanvas.getContext('2d');
+        const bgCtx = bgCanvas.getContext('2d');
+
+        let width, height;
+        let mouseX = 0, mouseY = 0;
+        let isMouseDown = false;
+        let realMouseHidden = false; // Когда стикман украл мышь
+        let entities = [];
+        let foods = [];
+        let particles = [];
+        
+        // Настройки
+        let settings = {
+            gravity: 0.5,
+            friction: 0.9,
+            stealEnabled: true,
+            hungerEnabled: true
+        };
+
+        // Инициализация размеров
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            gameCanvas.width = width;
+            gameCanvas.height = height;
+            bgCanvas.width = width;
+            bgCanvas.height = height;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // Отслеживание мыши
+        document.addEventListener('mousemove', (e) => {
+            if (!realMouseHidden) {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                cursor.style.transform = `translate(${mouseX}px, ${mouseY}px)`;
+            }
+        });
+        document.addEventListener('mousedown', () => { 
+            isMouseDown = true; 
+            cursor.style.transform = `translate(${mouseX}px, ${mouseY}px) scale(0.8)`;
+            spawnFood(mouseX, mouseY); // Клик создает еду или эффекты
+        });
+        document.addEventListener('mouseup', () => { 
+            isMouseDown = false;
+            cursor.style.transform = `translate(${mouseX}px, ${mouseY}px) scale(1)`;
+        });
+
+        // --- 2. MATRIX BACKGROUND ---
+        const cols = Math.floor(window.innerWidth / 20);
+        const ypos = Array(cols).fill(0);
+
+        function drawMatrix() {
+            bgCtx.fillStyle = '#0001';
+            bgCtx.fillRect(0, 0, width, height);
+            bgCtx.fillStyle = '#8a2be2';
+            bgCtx.font = '15pt monospace';
+
+            ypos.forEach((y, ind) => {
+                const text = String.fromCharCode(Math.random() * 128);
+                const x = ind * 20;
+                bgCtx.fillText(text, x, y);
+                if (y > 100 + Math.random() * 10000) ypos[ind] = 0;
+                else ypos[ind] = y + 20;
+            });
+        }
+
+        // --- 3. STICKMAN AI CLASS ---
+        class Stickman {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.size = 40;
+                this.color = '#fff';
+                this.state = 'idle'; // idle, walk, sleep, eat, drag, steal, panic
+                this.hunger = 100;
+                this.energy = 100;
+                this.target = null;
+                this.grabbed = false; // Если игрок схватил его
+                this.holdingMouse = false; // Если он украл мышь
+                
+                // Анимация
+                this.frame = 0;
+                this.speech = null;
+                this.speechTimer = 0;
+            }
+
+            update() {
+                // 1. Физика
+                if (!this.grabbed) {
+                    this.x += this.vx;
+                    this.y += this.vy;
+
+                    // Гравитация
+                    if (settings.gravity > 0 && this.y < height - 100) {
+                        this.vy += settings.gravity;
+                    }
+
+                    // Пол
+                    if (this.y > height - 50) {
+                        this.y = height - 50;
+                        this.vy *= -0.5; // Отскок
+                        this.vx *= settings.friction;
+                    }
+
+                    // Стены
+                    if (this.x < 0 || this.x > width) this.vx *= -1;
+                } else {
+                    // Если игрок тащит
+                    this.x = mouseX;
+                    this.y = mouseY;
+                    this.vx = 0; this.vy = 0;
+                }
+
+                // 2. Логика (Мозг)
+                this.frame++;
+                if (this.speechTimer > 0) this.speechTimer--;
+                else this.speech = null;
+
+                if (settings.hungerEnabled) this.hunger -= 0.05;
+                if (this.hunger < 30) this.state = 'hungry';
+
+                // ПРИНЯТИЕ РЕШЕНИЙ
+                if (!this.grabbed) {
+                    this.decideAction();
+                }
+
+                // Если украл мышь
+                if (this.holdingMouse) {
+                    realMouseHidden = true;
+                    cursor.style.display = 'none'; // Скрываем реальный DOM курсор
+                    // Двигаем "мышь" за стикманом
+                    // В реале мы не можем двигать OS курсор, но мы рисуем фейковый
+                }
+            }
+
+            decideAction() {
+                // Если держит мышь - бегает с ней
+                if (this.holdingMouse) {
+                    if (Math.random() < 0.01) {
+                        this.holdingMouse = false;
+                        realMouseHidden = false;
+                        cursor.style.display = 'block';
+                        this.say("Скучно.");
+                        // Возвращаем курсор (визуально)
+                        mouseX = this.x; mouseY = this.y;
+                    }
+                    return;
+                }
+
+                // Поиск еды
+                if (this.state === 'hungry' && foods.length > 0) {
+                    let food = foods[0];
+                    let dx = food.x - this.x;
+                    let dy = food.y - this.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < 20) {
+                        // Едим
+                        this.hunger = 100;
+                        this.state = 'idle';
+                        foods.splice(0, 1); // Удаляем еду
+                        this.say("Вкусно!");
+                        createParticles(this.x, this.y, '#0f0');
+                    } else {
+                        this.vx = (dx / dist) * 3;
+                        this.vy = (dy / dist) * 3;
+                    }
+                    return;
+                }
+
+                // Воровство мыши (Редкое событие)
+                if (settings.stealEnabled && !realMouseHidden && Math.random() < 0.002) {
+                    let dx = mouseX - this.x;
+                    let dy = mouseY - this.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    if (dist < 50) {
+                        this.state = 'steal';
+                        this.vx = (dx / dist) * 4;
+                        this.vy = (dy / dist) * 4;
+                        if (dist < 10) {
+                            this.holdingMouse = true;
+                            this.say("МОЁ!");
+                        }
+                        return;
+                    }
+                }
+
+                // Случайное блуждание
+                if (Math.random() < 0.02) {
+                    this.vx = (Math.random() - 0.5) * 4;
+                    if(this.y >= height - 60) this.vy = -Math.random() * 10; // Прыжок
+                }
+
+                // Общение
+                if (Math.random() < 0.005) {
+                    const phrases = ["Привет", "Где код?", "ws3eqr топ", "Хочу есть", "Лаги...", "Вижу тебя"];
+                    this.say(phrases[Math.floor(Math.random() * phrases.length)]);
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Если держит мышь - рисуем курсор у него в руке
+                if (this.holdingMouse) {
+                    ctx.fillStyle = 'white';
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(10, -10);
+                    ctx.lineTo(20, 10);
+                    ctx.lineTo(10, 10);
+                    ctx.lineTo(0, 20);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // ТЕЛО
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3;
+                ctx.lineCap = 'round';
+
+                // Ноги (анимация ходьбы)
+                let legOffset = Math.sin(this.frame * 0.2) * 10;
+                if (Math.abs(this.vx) < 0.1) legOffset = 0;
+
+                ctx.beginPath();
+                // Левая нога
+                ctx.moveTo(0, 0);
+                ctx.lineTo(-10 + legOffset, 30);
+                // Правая нога
+                ctx.moveTo(0, 0);
+                ctx.lineTo(10 - legOffset, 30);
+                // Туловище
+                ctx.moveTo(0, 0);
+                ctx.lineTo(0, -30);
+                // Руки
+                ctx.moveTo(0, -25);
+                ctx.lineTo(-15, -10 - legOffset);
+                ctx.moveTo(0, -25);
+                ctx.lineTo(15, -10 + legOffset);
+                ctx.stroke();
+
+                // Голова
+                ctx.beginPath();
+                ctx.arc(0, -40, 10, 0, Math.PI * 2);
+                ctx.fillStyle = '#000';
+                ctx.fill();
+                ctx.stroke();
+
+                // Глаза (Неон)
+                ctx.fillStyle = this.holdingMouse ? '#f00' : '#8a2be2';
+                ctx.beginPath();
+                ctx.arc(-3, -42, 2, 0, Math.PI*2);
+                ctx.arc(3, -42, 2, 0, Math.PI*2);
+                ctx.fill();
+
+                // Имя/Речь
+                if (this.speech) {
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '12px Inter';
+                    ctx.fillText(this.speech, -20, -60);
+                }
+
+                ctx.restore();
+            }
+
+            say(text) {
+                this.speech = text;
+                this.speechTimer = 100;
+            }
+        }
+
+        // --- 4. GAME LOGIC ---
+        function startGame() {
+            // Применяем настройки
+            settings.gravity = document.getElementById('opt-grav').checked ? 0.5 : 0;
+            settings.stealEnabled = document.getElementById('opt-steal').checked;
+            settings.hungerEnabled = document.getElementById('opt-hunger').checked;
+
+            document.getElementById('menu-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('menu-screen').style.display = 'none';
+                document.getElementById('world').style.display = 'block';
+                // Спавним первых жителей
+                for(let i=0; i<3; i++) spawnStickman();
+                gameLoop();
+            }, 800);
+        }
+
+        function spawnStickman() {
+            entities.push(new Stickman());
+        }
+
+        function spawnFood(x, y) {
+            if(!x) { x = Math.random() * width; y = 50; }
+            foods.push({x: x, y: y, size: 10});
+        }
+
+        function createParticles(x, y, color) {
+            for(let i=0; i<10; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 5,
+                    vy: (Math.random() - 0.5) * 5,
+                    life: 50, color: color
+                });
+            }
+        }
+
+        function resetWorld() {
+            if(confirm("Уничтожить всех?")) {
+                entities = [];
+                foods = [];
+                realMouseHidden = false;
+                cursor.style.display = 'block';
+            }
+        }
+
+        // Взаимодействие (Хватание стикманов)
+        document.addEventListener('mousedown', () => {
+            entities.forEach(ent => {
+                let dx = mouseX - ent.x;
+                let dy = mouseY - ent.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 50) {
+                    ent.grabbed = true;
+                    ent.say("АААА!");
+                    // Если он держал мышь, отпускает
+                    if(ent.holdingMouse) {
+                        ent.holdingMouse = false;
+                        realMouseHidden = false;
+                        cursor.style.display = 'block';
+                    }
+                }
+            });
+        });
+
+        document.addEventListener('mouseup', () => {
+            entities.forEach(ent => ent.grabbed = false);
+        });
+
+        // MAIN LOOP
+        function gameLoop() {
+            // Очистка
+            ctx.clearRect(0, 0, width, height);
+            
+            // Фон (Матрица)
+            drawMatrix();
+
+            // Еда
+            ctx.fillStyle = '#ff9900';
+            foods.forEach((f, i) => {
+                f.y += 2; // Падение еды
+                if(f.y > height - 20) f.y = height - 20;
+                ctx.beginPath();
+                ctx.arc(f.x, f.y, 5, 0, Math.PI*2);
+                ctx.fill();
+                ctx.font = '10px Arial';
+                ctx.fillText("🍔", f.x-6, f.y+4);
+            });
+
+            // Частицы
+            particles.forEach((p, i) => {
+                p.x += p.vx; p.y += p.vy; p.life--;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 50;
+                ctx.fillRect(p.x, p.y, 3, 3);
+                ctx.globalAlpha = 1;
+                if(p.life <= 0) particles.splice(i, 1);
+            });
+
+            // Сущности
+            entities.forEach(ent => {
+                ent.update();
+                ent.draw();
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+    </script>
+</body>
+</html>
