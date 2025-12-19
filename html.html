@@ -5,123 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WS3EQR | GENESIS ULTIMATE OS</title>
     
-    <!-- ПОДКЛЮЧЕНИЕ БИБЛИОТЕК -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
 
     <style>
-        /* --- 0. ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ (THEME ENGINE) --- */
         :root {
-            --bg-dark: #050505;
-            --glass-panel: rgba(20, 20, 20, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.08);
-            --accent: #8a2be2; /* Фиолетовый неон */
-            --accent-glow: rgba(138, 43, 226, 0.5);
-            --text-main: #ffffff;
-            --text-dim: #888888;
-            --success: #00ff88;
-            --danger: #ff4444;
-            --warn: #ffbb33;
-            --font-ui: 'Inter', sans-serif;
-            --font-code: 'JetBrains Mono', monospace;
+            --bg-dark: #050505; --glass-panel: rgba(20, 20, 20, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.08); --accent: #8a2be2;
+            --accent-glow: rgba(138, 43, 226, 0.5); --text-main: #ffffff;
+            --success: #00ff88; --danger: #ff4444;
         }
-
-        /* СБРОС И БАЗА */
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; cursor: none; }
-        
-        body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: var(--font-ui);
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
-        }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: 'Inter', sans-serif; height: 100vh; overflow: hidden; }
 
-        /* --- 1. КУРСОР И МИР --- */
         #custom-cursor {
-            position: fixed; top: 0; left: 0; width: 24px; height: 24px; z-index: 99999; pointer-events: none;
+            position: fixed; width: 24px; height: 24px; z-index: 99999; pointer-events: none;
             background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="black" stroke-width="1.5"><path d="M5.5 3.21l10.8 15.6-5.6-.6-2.6 5.8-3.4-1.4 2.5-5.6H1.8z"/></svg>') no-repeat;
-            filter: drop-shadow(0 0 5px var(--accent));
-            transition: transform 0.05s ease-out;
+            filter: drop-shadow(0 0 5px var(--accent)); transition: transform 0.05s;
         }
 
-        /* Слои игры */
-        #world-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; }
-        #weather-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
-        #lighting-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 20; pointer-events: none; mix-blend-mode: multiply; }
-        #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+        #world-layer, #weather-canvas, #lighting-layer, #ui-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #weather-canvas, #lighting-layer, #ui-layer { pointer-events: none; }
+        #lighting-layer { mix-blend-mode: multiply; z-index: 20; transition: background-color 1s; }
+        #ui-layer { z-index: 100; }
 
-        /* --- 2. ИНТЕРФЕЙС (OS STYLE) --- */
-        
-        /* Верхняя панель */
         .top-bar {
             position: absolute; top: 0; left: 0; width: 100%; height: 40px;
             background: rgba(10, 10, 10, 0.8); border-bottom: 1px solid var(--glass-border);
-            backdrop-filter: blur(15px);
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 20px; pointer-events: all; z-index: 1000;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+            pointer-events: all; z-index: 1000; backdrop-filter: blur(10px);
         }
-        .os-logo { font-weight: 900; letter-spacing: 1px; color: var(--text-main); font-size: 0.9rem; }
+        .os-logo { font-weight: 900; letter-spacing: 1px; font-size: 0.9rem; }
         .os-logo span { color: var(--accent); }
-        .os-stats { display: flex; gap: 20px; font-family: var(--font-code); font-size: 0.75rem; color: var(--text-dim); }
-        .stat-item i { color: var(--accent); margin-right: 5px; }
+        .os-stats { display: flex; gap: 20px; font-family: 'JetBrains Mono'; font-size: 0.75rem; color: #888; }
 
-        /* Боковое меню (Панель инструментов) */
         .toolbar {
             position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
             background: var(--glass-panel); border: 1px solid var(--glass-border);
             border-radius: 16px; padding: 15px 10px; display: flex; flex-direction: column; gap: 15px;
-            backdrop-filter: blur(20px); pointer-events: all;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5); transition: 0.3s;
+            backdrop-filter: blur(20px); pointer-events: all; transition: 0.3s;
         }
-        .toolbar:hover { border-color: var(--accent); transform: translateY(-50%) scale(1.02); }
+        .toolbar:hover { border-color: var(--accent); }
         
         .tool-btn {
             width: 40px; height: 40px; border-radius: 10px; border: none;
             background: rgba(255,255,255,0.05); color: #fff; font-size: 1.2rem;
             cursor: none; transition: 0.2s; display: flex; align-items: center; justify-content: center;
-            position: relative;
         }
         .tool-btn:hover { background: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
-        .tool-btn::after {
-            content: attr(data-tooltip); position: absolute; left: 55px;
-            background: #111; padding: 5px 10px; border-radius: 4px; font-size: 0.7rem;
-            opacity: 0; pointer-events: none; transition: 0.2s; white-space: nowrap; border: 1px solid #333;
-        }
-        .tool-btn:hover::after { opacity: 1; left: 60px; }
 
-        /* Окно настроек (Скрыто) */
-        .window-panel {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-            width: 700px; height: 500px; background: #0a0a0a;
-            border: 1px solid var(--glass-border); border-radius: 12px;
-            display: none; flex-direction: column; overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.8); opacity: 0; transition: 0.3s; pointer-events: all;
-            z-index: 2000;
-        }
-        .window-panel.open { transform: translate(-50%, -50%) scale(1); opacity: 1; display: flex; }
-        
-        .win-header {
-            height: 40px; background: #111; border-bottom: 1px solid #222;
-            display: flex; align-items: center; justify-content: space-between; padding: 0 15px;
-        }
-        .win-title { font-size: 0.8rem; font-weight: bold; text-transform: uppercase; color: #888; }
-        .win-close { color: var(--danger); font-size: 1rem; cursor: none; }
-        
-        .win-content { flex: 1; padding: 30px; overflow-y: auto; }
-        
-        /* Сетка настроек */
-        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .setting-item { background: #111; padding: 15px; border-radius: 8px; border: 1px solid #222; }
-        .setting-item h4 { color: var(--accent); margin-bottom: 5px; font-size: 0.85rem; }
-        .setting-item p { color: #555; font-size: 0.7rem; margin-bottom: 10px; }
-        
-        /* Слайдеры и чекбоксы */
-        input[type=range] { width: 100%; accent-color: var(--accent); }
-        .checkbox-row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
-        
-        /* Карточка существа (При клике) */
         #entity-card {
             position: absolute; right: 20px; top: 60px; width: 300px;
             background: rgba(15, 15, 15, 0.9); border: 1px solid var(--accent);
@@ -132,51 +64,31 @@
         
         .card-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .card-avatar { width: 50px; height: 50px; background: #222; border-radius: 50%; border: 2px solid #fff; }
-        .card-name { font-weight: bold; font-size: 1.1rem; }
-        .card-role { font-size: 0.75rem; color: var(--accent); text-transform: uppercase; }
-        
         .stat-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.8rem; color: #aaa; }
         .progress-bg { width: 100%; height: 6px; background: #333; border-radius: 3px; overflow: hidden; margin-bottom: 10px; }
         .progress-fill { height: 100%; transition: width 0.3s; }
 
-        /* Контекстное меню (ПКМ) */
         #ctx-menu {
             position: absolute; background: #1a1a1a; border: 1px solid #333;
             width: 180px; border-radius: 6px; padding: 5px; display: none; z-index: 5000; pointer-events: all;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        .ctx-item {
-            padding: 8px 12px; font-size: 0.85rem; color: #ccc; border-radius: 4px; display: flex; gap: 10px; align-items: center;
-        }
+        .ctx-item { padding: 8px 12px; font-size: 0.85rem; color: #ccc; border-radius: 4px; display: flex; gap: 10px; align-items: center; }
         .ctx-item:hover { background: var(--accent); color: #fff; }
-
-        /* Сообщения над головой */
+        
         .bubble {
             position: absolute; background: #fff; color: #000; padding: 5px 10px;
             border-radius: 10px; font-size: 0.75rem; font-weight: bold; pointer-events: none;
             transform: translate(-50%, -100%); white-space: nowrap; opacity: 0; transition: opacity 0.3s; z-index: 50;
         }
-        .bubble::after {
-            content: ''; position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%);
-            border-width: 5px; border-style: solid; border-color: #fff transparent transparent transparent;
-        }
-
     </style>
 </head>
 <body>
-
-    <!-- 0. СИСТЕМНЫЕ СЛОИ -->
     <div id="custom-cursor"></div>
-    <div id="lighting-layer"></div> <!-- Слой для Ночи -->
-    
-    <!-- 1. ИГРОВОЙ МИР -->
+    <div id="lighting-layer"></div>
     <canvas id="world-layer"></canvas>
     <canvas id="weather-canvas"></canvas>
 
-    <!-- 2. ИНТЕРФЕЙС -->
     <div id="ui-layer">
-        
-        <!-- Верхняя панель -->
         <div class="top-bar">
             <div class="os-logo">WS3EQR <span>GENESIS</span></div>
             <div class="os-stats">
@@ -186,837 +98,328 @@
             </div>
         </div>
 
-        <!-- Боковая панель -->
         <div class="toolbar">
-            <button class="tool-btn" onclick="Game.spawn('stickman')" data-tooltip="Spawn Unit"><i class="fa-solid fa-person"></i></button>
-            <button class="tool-btn" onclick="Game.spawn('food')" data-tooltip="Drop Food"><i class="fa-solid fa-burger"></i></button>
-            <button class="tool-btn" onclick="Game.spawn('wood')" data-tooltip="Resources"><i class="fa-solid fa-cubes"></i></button>
-            <button class="tool-btn" onclick="Game.toggleRain()" data-tooltip="Toggle Rain"><i class="fa-solid fa-cloud-rain"></i></button>
+            <button class="tool-btn" onclick="Game.spawn('stickman')" title="Spawn Unit"><i class="fa-solid fa-person"></i></button>
+            <button class="tool-btn" onclick="Game.spawn('food')" title="Drop Food"><i class="fa-solid fa-burger"></i></button>
+            <button class="tool-btn" onclick="Game.spawn('wood')" title="Resources"><i class="fa-solid fa-cubes"></i></button>
+            <button class="tool-btn" onclick="Game.toggleRain()" title="Rain"><i class="fa-solid fa-cloud-rain"></i></button>
             <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 5px 0;"></div>
-            <button class="tool-btn" onclick="UI.toggleSettings()" data-tooltip="Settings"><i class="fa-solid fa-gear"></i></button>
-            <button class="tool-btn" style="color:var(--danger)" onclick="Game.nuke()" data-tooltip="NUKE"><i class="fa-solid fa-radiation"></i></button>
+            <button class="tool-btn" style="color:var(--danger)" onclick="Game.nuke()" title="NUKE"><i class="fa-solid fa-radiation"></i></button>
         </div>
 
-        <!-- Окно настроек -->
-        <div class="window-panel" id="settings-win">
-            <div class="win-header">
-                <span class="win-title">System Configuration</span>
-                <span class="win-close" onclick="UI.toggleSettings()">✖</span>
-            </div>
-            <div class="win-content">
-                <div class="settings-grid">
-                    <div class="setting-item">
-                        <h4>Gravity Force</h4>
-                        <p>Controls global physics weight.</p>
-                        <input type="range" min="0" max="20" value="10" id="set-grav">
-                    </div>
-                    <div class="setting-item">
-                        <h4>AI Complexity</h4>
-                        <p>Brain processing power.</p>
-                        <div class="checkbox-row">
-                            <span>Smart Thinking</span>
-                            <input type="checkbox" checked id="set-smart">
-                        </div>
-                    </div>
-                    <div class="setting-item">
-                        <h4>Interactions</h4>
-                        <div class="checkbox-row">
-                            <span>Mouse Theft</span>
-                            <input type="checkbox" checked id="set-steal">
-                        </div>
-                        <div class="checkbox-row">
-                            <span>Tribe Wars</span>
-                            <input type="checkbox" id="set-war">
-                        </div>
-                    </div>
-                </div>
-                <button class="tool-btn" style="width: 100%; margin-top: 20px; font-size: 0.9rem; border-radius: 6px;" onclick="Game.save()">SAVE WORLD STATE</button>
-            </div>
-        </div>
-
-        <!-- Инфо карточка (Скрыта) -->
         <div id="entity-card">
             <div class="card-header">
                 <div class="card-avatar" id="card-color"></div>
-                <div>
-                    <div class="card-name" id="card-name">Unit-X</div>
-                    <div class="card-role" id="card-state">IDLE</div>
-                </div>
+                <div><div class="card-name" id="card-name">Unit-X</div><div class="card-role" id="card-state">IDLE</div></div>
             </div>
             <div class="stat-row"><span>Health</span><span id="txt-hp">100%</span></div>
             <div class="progress-bg"><div class="progress-fill" style="background:var(--danger); width:100%" id="bar-hp"></div></div>
-            
             <div class="stat-row"><span>Hunger</span><span id="txt-hunger">100%</span></div>
             <div class="progress-bg"><div class="progress-fill" style="background:orange; width:100%" id="bar-hunger"></div></div>
-
             <div class="stat-row"><span>Energy</span><span id="txt-energy">100%</span></div>
             <div class="progress-bg"><div class="progress-fill" style="background:var(--success); width:100%" id="bar-energy"></div></div>
-            
             <div style="margin-top:10px; border-top:1px solid #333; padding-top:10px; font-size:0.8rem; color:#888;">
                 <i class="fa-solid fa-bullseye"></i> Goal: <span id="card-goal" style="color:#fff">None</span>
             </div>
         </div>
 
-        <!-- Контекстное меню -->
         <div id="ctx-menu">
             <div class="ctx-item" onclick="Game.ctxAction('inspect')"><i class="fa-solid fa-eye"></i> Inspect</div>
             <div class="ctx-item" onclick="Game.ctxAction('feed')"><i class="fa-solid fa-burger"></i> Feed</div>
             <div class="ctx-item" onclick="Game.ctxAction('kill')"><i class="fa-solid fa-skull"></i> Terminate</div>
         </div>
-
-        <!-- Контейнер для пузырьков речи -->
         <div id="bubbles-layer"></div>
-
     </div>
-<script>
-        // --- ЧАСТЬ 2: ЯДРО СИМУЛЯЦИИ И КЛАССЫ ---
 
-        // Глобальные переменные канваса
+    <script>
+        // --- ЯДРО СИМУЛЯЦИИ ---
         const CANVAS = document.getElementById('world-layer');
         const CTX = CANVAS.getContext('2d');
         const W_CANVAS = document.getElementById('weather-canvas');
         const W_CTX = W_CANVAS.getContext('2d');
-        const LIGHT = document.getElementById('lighting-layer'); // Слой света (для ночи)
         
-        // Переменные состояния
         let WIDTH, HEIGHT;
-        let MOUSE = { x: 0, y: 0, down: false, holding: null };
-        let TARGET_FPS = 60;
+        let MOUSE = { x: 0, y: 0, down: false };
         let FRAME = 0;
 
-        // Конфигурация мира
         const WORLD = {
-            gravity: 0.5,
-            ground: 0,
-            friction: 0.9,
-            time: 800, // Время (0-2400)
-            rain: false,
-            wind: 0,
-            
-            // Списки объектов
-            units: [],
-            items: [],
-            particles: [],
-            structures: [],
-            
-            // Настройки (изменяются через UI)
-            settings: {
-                stealMouse: true,
-                smartAI: true,
-                warMode: false
-            }
+            gravity: 0.5, ground: 0, friction: 0.9, time: 800, rain: false,
+            units: [], items: [], particles: [], structures: []
         };
 
-        // Вспомогательные функции
         const Rnd = (min, max) => Math.random() * (max - min) + min;
         const Dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-        const Clamp = (val, min, max) => Math.min(Math.max(val, min), max);
 
-        // --- КЛАСС: СУЩНОСТЬ (STICKMAN) ---
+        // --- КЛАСС СТИКМАНА ---
         class Entity {
-            constructor(x, y, loadData = null) {
-                if (loadData) { Object.assign(this, loadData); return; }
-
-                this.id = Math.random().toString(36).substr(2, 9);
+            constructor(x, y) {
+                this.id = Math.random().toString(36).substr(2, 5).toUpperCase();
                 this.x = x || Rnd(50, WIDTH - 50);
                 this.y = y || WORLD.ground - 100;
-                this.vx = 0;
-                this.vy = 0;
-                this.size = 40;
-                
-                // Характеристики
-                this.tribe = ['#ff4444', '#00ff88', '#8be9fd'][Math.floor(Math.random() * 3)]; // Красный, Зеленый, Синий
-                this.hp = 100;
-                this.maxHp = 100;
-                this.hunger = 100;
-                this.energy = 100;
-                this.inventory = { wood: 0, food: 0, weapon: false };
-                
-                // Мозг
-                this.state = 'idle'; // idle, move, sleep, build, panic, steal, attack, dance
-                this.target = null;  // Цель движения (объект или координаты)
-                this.goal = 'Waiting...'; // Текстовое описание цели
-                this.isGrabbed = false; // Схвачен мышкой
-                this.holdingMouse = false; // Украл курсор
-                
-                // Визуал
-                this.frame = Rnd(0, 100);
-                this.dir = 1; // 1 = вправо, -1 = влево
-                this.chatTimer = 0;
+                this.vx = 0; this.vy = 0;
+                this.tribe = ['#ff4444', '#00ff88', '#8be9fd'][Math.floor(Math.random() * 3)];
+                this.hp = 100; this.hunger = 100; this.energy = 100;
+                this.state = 'idle'; this.target = null; this.goal = 'Waiting...';
+                this.isGrabbed = false; this.frame = Rnd(0, 100); this.dir = 1;
+                this.inventory = { wood: 0 };
             }
 
-            // Основной цикл обновления юнита
             update() {
                 if (this.hp <= 0) return this.die();
+                this.hunger -= 0.03; this.energy -= 0.02;
 
-                // 1. Потребности и таймеры
-                this.hunger -= 0.03;
-                this.energy -= 0.02;
-                if (this.chatTimer > 0) this.chatTimer--;
-
-                // Если схвачен мышкой - физика отключается
                 if (this.isGrabbed) {
-                    this.x = MOUSE.x;
-                    this.y = MOUSE.y;
-                    this.vx = 0; this.vy = 0;
-                    this.state = 'panic';
-                    if (this.holdingMouse) this.dropMouse(); // Бросает мышь если его схватили
-                    return;
+                    this.x = MOUSE.x; this.y = MOUSE.y; this.vx = 0; this.vy = 0;
+                    this.state = 'panic'; return;
                 }
-
-                // 2. ИИ (Принятие решений)
+                
                 if (FRAME % 10 === 0) this.think(); 
-
-                // 3. Выполнение действий
                 this.act();
-
-                // 4. Физика
                 this.applyPhysics();
             }
 
-            // Логика поведения (Brain)
             think() {
-                // Приоритет 1: Сон (если ночь или нет энергии)
                 const isNight = WORLD.time > 2000 || WORLD.time < 600;
                 if ((this.energy < 20 || (isNight && this.energy < 90)) && this.state !== 'panic') {
-                    this.setGoal('sleep', null, 'Zzz...');
-                    return;
+                    this.setGoal('sleep', null, 'Zzz...'); return;
                 }
-
-                // Приоритет 2: Голод
                 if (this.hunger < 50) {
                     const food = this.findNearest('food');
-                    if (food) {
-                        this.setGoal('eat', food, 'Searching Food');
-                    } else {
-                        // Если еды нет, паникуем или просим
-                        if (this.hunger < 20) this.say("NEED FOOD!");
-                        this.setGoal('wander', null, 'Starving');
-                    }
+                    if (food) this.setGoal('eat', food, 'Searching Food');
+                    else this.setGoal('wander', null, 'Hungry!');
                     return;
                 }
-
-                // Приоритет 3: Война (если включена)
-                if (WORLD.settings.warMode) {
-                    const enemy = this.findEnemy();
-                    if (enemy) {
-                        this.setGoal('attack', enemy, 'ATTACKING!');
-                        return;
-                    }
-                }
-
-                // Приоритет 4: Стройка (если есть ресурсы)
-                if (this.inventory.wood >= 3) {
-                    this.setGoal('build', null, 'Building Base');
-                    return;
-                }
-
-                // Приоритет 5: Сбор ресурсов
                 const wood = this.findNearest('wood');
-                if (wood && Rnd(0, 1) < 0.3) { // 30% шанс пойти за деревом
-                    this.setGoal('gather', wood, 'Getting Wood');
-                    return;
-                }
-
-                // Приоритет 6: Воровство мыши (Уникальная фича)
-                if (WORLD.settings.stealMouse && !this.holdingMouse && !MOUSE.holding && Rnd(0, 1) < 0.005) {
-                    this.setGoal('steal_mouse', {x: MOUSE.x, y: MOUSE.y}, 'Hehe...');
-                    return;
-                }
-
-                // Если делать нечего
+                if (wood && Rnd(0, 1) < 0.3) { this.setGoal('gather', wood, 'Getting Wood'); return; }
+                
                 if (this.state === 'idle' || this.state === 'sleep') {
                     if (Rnd(0, 1) < 0.05) this.setGoal('wander', null, 'Exploring');
-                    else if (Rnd(0, 1) < 0.01) this.setGoal('dance', null, 'Vibing');
                 }
             }
 
-            // Выполнение текущего состояния
             act() {
-                switch (this.state) {
-                    case 'move':
-                    case 'gather':
-                    case 'eat':
-                    case 'attack':
-                    case 'steal_mouse':
-                        if (this.target) {
-                            // Если цель это мышка - обновляем её координаты
-                            if(this.state === 'steal_mouse' && !this.holdingMouse) {
-                                this.target = {x: MOUSE.x, y: MOUSE.y};
-                            }
-                            this.moveTo(this.target);
-                            this.interactWithTarget();
-                        } else {
-                            this.state = 'idle';
-                        }
-                        break;
-                    
-                    case 'wander':
-                        if (Rnd(0,1) < 0.05) this.vx = Rnd(-2, 2);
-                        if (this.x < 50) this.vx = 2;
-                        if (this.x > WIDTH - 50) this.vx = -2;
-                        break;
-
-                    case 'sleep':
-                        this.vx = 0;
-                        this.energy += 0.05;
-                        if (this.energy >= 100) {
-                            this.energy = 100;
-                            this.state = 'idle';
-                            this.say("Good morning!");
-                        }
-                        break;
-                    
-                    case 'dance':
-                        this.vx = 0;
-                        if (Rnd(0,1) < 0.02) this.state = 'idle'; // Закончить танец
-                        break;
+                if(this.state === 'move' || this.state === 'eat' || this.state === 'gather') {
+                    if(this.target) {
+                        this.moveTo(this.target);
+                        if(Dist(this, this.target) < 30) this.interact();
+                    } else this.state = 'idle';
                 }
-
-                // Если держит мышь - курсор приклеен к нему
-                if (this.holdingMouse) {
-                    const cursorEl = document.getElementById('custom-cursor');
-                    cursorEl.style.transform = `translate(${this.x + 10}px, ${this.y + 10}px) rotate(180deg)`;
-                    
-                    // Иногда бросает
-                    if (Rnd(0, 1) < 0.01) this.dropMouse();
+                if(this.state === 'wander') {
+                    if(Rnd(0,1) < 0.05) this.vx = Rnd(-2, 2);
+                    if(this.x < 50) this.vx = 2; if(this.x > WIDTH - 50) this.vx = -2;
+                }
+                if(this.state === 'sleep') {
+                    this.vx = 0; this.energy += 0.05;
+                    if(this.energy >= 100) { this.energy = 100; this.state = 'idle'; this.say("Woke up"); }
                 }
             }
 
             moveTo(t) {
                 const dx = t.x - this.x;
-                const dist = Math.abs(dx);
-                
-                if (dist > 10) {
+                if (Math.abs(dx) > 10) {
                     this.vx += Math.sign(dx) * 0.5;
                     this.dir = Math.sign(dx);
-                    // Прыжок
-                    if (this.y === WORLD.ground && Rnd(0,1) < 0.02) this.vy = -10; 
-                } else {
-                    this.vx *= 0.5; // Торможение у цели
-                }
-                
-                // Лимит скорости
-                this.vx = Clamp(this.vx, -4, 4);
+                    if (this.vx > 4) this.vx = 4; if (this.vx < -4) this.vx = -4;
+                } else this.vx *= 0.5;
             }
 
-            interactWithTarget() {
-                const dist = Dist(this, this.target);
-                if (dist > 30) return;
-
+            interact() {
                 if (this.state === 'eat') {
-                    this.hunger = 100;
-                    this.say("Yummy!");
+                    this.hunger = 100; this.say("Yummy!");
                     Game.removeObj(this.target, 'items');
                     Game.spawnParticles(this.x, this.y, '#0f0', 5);
                     this.state = 'idle';
-                }
-                else if (this.state === 'gather') {
-                    this.inventory.wood++;
-                    this.say("+1 Wood");
+                } else if (this.state === 'gather') {
+                    this.inventory.wood++; this.say("+1 Wood");
                     Game.removeObj(this.target, 'items');
                     this.state = 'idle';
-                }
-                else if (this.state === 'attack') {
-                    this.target.hp -= 1;
-                    this.target.vx = Math.sign(this.target.x - this.x) * 5; // Отталкивание
-                    this.target.vy = -5;
-                    Game.spawnParticles(this.target.x, this.target.y, '#f00', 2);
-                    if(this.target.hp <= 0) this.say("Victory!");
-                }
-                else if (this.state === 'steal_mouse' && !this.holdingMouse) {
-                    this.holdingMouse = true;
-                    this.say("Gotcha!");
-                    document.getElementById('custom-cursor').style.filter = "invert(1)"; // Эффект захвата
                 }
             }
 
             applyPhysics() {
-                this.vy += WORLD.gravity;
-                this.x += this.vx;
-                this.y += this.vy;
-
-                // Пол
-                if (this.y > WORLD.ground) {
-                    this.y = WORLD.ground;
-                    this.vy = 0;
-                    this.vx *= WORLD.friction;
-                }
-
-                // Платформы
-                WORLD.structures.forEach(s => {
-                    if (this.x > s.x && this.x < s.x + s.w && 
-                        this.y >= s.y - 5 && this.y <= s.y + 10 && this.vy >= 0) {
-                        this.y = s.y;
-                        this.vy = 0;
-                        this.vx *= WORLD.friction;
-                    }
-                });
-
-                // Стены
+                this.vy += WORLD.gravity; this.x += this.vx; this.y += this.vy;
+                if (this.y > WORLD.ground) { this.y = WORLD.ground; this.vy = 0; this.vx *= WORLD.friction; }
                 if (this.x < 0) { this.x = 0; this.vx *= -1; }
                 if (this.x > WIDTH) { this.x = WIDTH; this.vx *= -1; }
             }
 
-            // Вспомогательные методы
-            setGoal(state, target, text) {
-                this.state = state;
-                this.target = target;
-                this.goal = text;
-            }
-
+            setGoal(s, t, g) { this.state = s; this.target = t; this.goal = g; }
+            
             findNearest(type) {
-                let minDst = Infinity;
-                let res = null;
-                WORLD.items.forEach(i => {
-                    if (i.type === type) {
-                        const d = Dist(this, i);
-                        if (d < minDst) { minDst = d; res = i; }
-                    }
-                });
+                let min = Infinity; let res = null;
+                WORLD.items.forEach(i => { if(i.type === type) { let d = Dist(this, i); if(d < min){ min = d; res = i; } } });
                 return res;
             }
 
-            findEnemy() {
-                return WORLD.units.find(u => u !== this && u.tribe !== this.tribe && u.hp > 0);
-            }
-
-            dropMouse() {
-                this.holdingMouse = false;
-                this.say("Boring...");
-                document.getElementById('custom-cursor').style.transform = `translate(${MOUSE.x}px, ${MOUSE.y}px)`;
-                document.getElementById('custom-cursor').style.filter = "none";
-            }
-
             say(text) {
-                // Создаем HTML пузырь (Bubble)
-                const b = document.createElement('div');
-                b.className = 'bubble';
-                b.innerText = text;
-                b.style.left = this.x + 'px';
-                b.style.top = (this.y - 50) + 'px';
+                const b = document.createElement('div'); b.className = 'bubble'; b.innerText = text;
+                b.style.left = this.x + 'px'; b.style.top = (this.y - 60) + 'px';
                 document.getElementById('bubbles-layer').appendChild(b);
-                
-                // Анимация
                 setTimeout(() => b.style.opacity = 1, 10);
-                setTimeout(() => {
-                    b.style.opacity = 0;
-                    setTimeout(() => b.remove(), 300);
-                }, 2000);
+                setTimeout(() => { b.style.opacity = 0; setTimeout(() => b.remove(), 300); }, 2000);
             }
 
-            die() {
-                Game.spawnParticles(this.x, this.y, '#fff', 20);
-                Game.removeObj(this, 'units');
-            }
+            die() { Game.spawnParticles(this.x, this.y, '#fff', 20); Game.removeObj(this, 'units'); }
 
             draw() {
-                CTX.save();
-                CTX.translate(this.x, this.y);
+                CTX.save(); CTX.translate(this.x, this.y);
+                CTX.strokeStyle = this.tribe; CTX.lineWidth = 3; CTX.lineCap = 'round';
+                CTX.shadowBlur = 10; CTX.shadowColor = this.tribe;
 
-                // Отрисовка тела (Стиль: Неон Стикман)
-                CTX.strokeStyle = this.tribe;
-                CTX.lineWidth = 3;
-                CTX.lineCap = 'round';
-                CTX.shadowBlur = 10;
-                CTX.shadowColor = this.tribe;
+                let leg = (Math.abs(this.vx) > 0.1) ? Math.sin(FRAME * 0.2) * 10 : 0;
+                if (this.state === 'sleep') { CTX.rotate(Math.PI / 2); leg = 0; }
 
-                // Ноги (Анимация ходьбы)
-                let legAnim = (Math.abs(this.vx) > 0.1) ? Math.sin(FRAME * 0.2) * 10 : 0;
-                
-                // Поза: Сон
-                if (this.state === 'sleep') {
-                    CTX.rotate(Math.PI / 2);
-                    legAnim = 0;
-                }
-
-                // Рисуем скелет
                 CTX.beginPath();
-                // Ноги
-                CTX.moveTo(0, -20); CTX.lineTo(-10 + legAnim, 0); 
-                CTX.moveTo(0, -20); CTX.lineTo(10 - legAnim, 0);
-                // Торс
-                CTX.moveTo(0, -20); CTX.lineTo(0, -50);
-                // Руки
-                let armAnim = legAnim;
-                if(this.state === 'attack') armAnim = -20; // Поднятые руки
-                if(this.holdingMouse) armAnim = -30; // Руки вверх держат мышь
-
-                CTX.moveTo(0, -45); CTX.lineTo(-15, -30 - armAnim);
-                CTX.moveTo(0, -45); CTX.lineTo(15, -30 + armAnim);
+                CTX.moveTo(0, -20); CTX.lineTo(-10 + leg, 0); 
+                CTX.moveTo(0, -20); CTX.lineTo(10 - leg, 0);
+                CTX.moveTo(0, -20); CTX.lineTo(0, -50); // Тело
+                CTX.moveTo(0, -45); CTX.lineTo(-15, -30 + leg); 
+                CTX.moveTo(0, -45); CTX.lineTo(15, -30 - leg);
                 CTX.stroke();
 
-                // Голова
-                CTX.fillStyle = '#000';
-                CTX.beginPath(); CTX.arc(0, -60, 10, 0, Math.PI*2); CTX.fill(); CTX.stroke();
-
-                // Глаза (Направление взгляда)
-                CTX.fillStyle = '#fff';
-                if(this.state === 'attack' || this.state === 'steal_mouse') CTX.fillStyle = '#f00'; // Злые глаза
-                CTX.beginPath(); CTX.arc(this.dir * 3, -62, 2, 0, Math.PI*2); CTX.fill();
-
-                // Инструмент в руках
-                if(this.state === 'build') {
-                    CTX.fillStyle = '#aaa';
-                    CTX.fillRect(15, -45, 12, 6); // Молоток
-                }
-
-                // Полоска HP (если ранен)
-                if(this.hp < 100) {
-                    CTX.fillStyle = '#333'; CTX.fillRect(-15, -80, 30, 4);
-                    CTX.fillStyle = '#f00'; CTX.fillRect(-15, -80, 30 * (this.hp/100), 4);
-                }
-
+                CTX.fillStyle = '#000'; CTX.beginPath(); CTX.arc(0, -60, 10, 0, Math.PI*2); CTX.fill(); CTX.stroke();
+                CTX.fillStyle = '#fff'; CTX.beginPath(); CTX.arc(this.dir * 3, -62, 2, 0, Math.PI*2); CTX.fill();
                 CTX.restore();
             }
         }
 
-        // --- КЛАСС: ПРЕДМЕТ (ITEM) ---
         class Item {
             constructor(type, x, y) {
-                this.type = type; // food, wood
-                this.x = x;
-                this.y = y;
+                this.type = type; this.x = x; this.y = y;
                 this.color = type === 'food' ? '#ffaa00' : '#8B4513';
                 this.icon = type === 'food' ? '🍔' : '🪵';
             }
             draw() {
-                CTX.fillStyle = this.color;
-                CTX.shadowBlur = 0;
+                CTX.fillStyle = this.color; CTX.shadowBlur = 0;
                 CTX.beginPath(); CTX.arc(this.x, this.y - 5, 5, 0, Math.PI*2); CTX.fill();
-                CTX.font = "12px Arial"; CTX.textAlign = "center";
-                CTX.fillText(this.icon, this.x, this.y - 10);
+                CTX.font = "12px Arial"; CTX.textAlign = "center"; CTX.fillText(this.icon, this.x, this.y - 10);
             }
         }
 
-        // --- КЛАСС: ЧАСТИЦА (PARTICLE) ---
         class Particle {
             constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * 10;
-                this.vy = (Math.random() - 0.5) * 10;
-                this.life = 1.0;
-                this.color = color;
+                this.x = x; this.y = y; this.color = color; this.life = 1.0;
+                this.vx = (Math.random() - 0.5) * 10; this.vy = (Math.random() - 0.5) * 10;
             }
-            update() {
-                this.x += this.vx; this.y += this.vy;
-                this.life -= 0.02;
-                this.vy += 0.2; // Gravity
-            }
-            draw() {
-                CTX.globalAlpha = this.life;
-                CTX.fillStyle = this.color;
-                CTX.fillRect(this.x, this.y, 4, 4);
-                CTX.globalAlpha = 1;
-            }
+            update() { this.x += this.vx; this.y += this.vy; this.life -= 0.02; this.vy += 0.2; }
+            draw() { CTX.globalAlpha = this.life; CTX.fillStyle = this.color; CTX.fillRect(this.x, this.y, 4, 4); CTX.globalAlpha = 1; }
         }
 
-        // --- КЛАСС: СТРУКТУРА (PLATFORM) ---
-        class Structure {
-            constructor(x, y, w) {
-                this.x = x; this.y = y; this.w = w; this.h = 10;
-            }
-            draw() {
-                CTX.fillStyle = '#333';
-                CTX.fillRect(this.x, this.y, this.w, this.h);
-                CTX.strokeStyle = '#8a2be2';
-                CTX.lineWidth = 1;
-                CTX.strokeRect(this.x, this.y, this.w, this.h);
-            }
-        }
-
-    </script>
-    // --- ЧАСТЬ 3: ИГРОВОЙ ДВИЖОК И UI ---
-
+        // --- ДВИЖОК ---
         const Game = {
             init: () => {
-                Game.resize();
-                window.addEventListener('resize', Game.resize);
-
-                // Слушатели мыши
+                Game.resize(); window.addEventListener('resize', Game.resize);
                 document.addEventListener('mousemove', e => {
-                    MOUSE.x = e.clientX;
-                    MOUSE.y = e.clientY;
-                    // Движение кастомного курсора
-                    const c = document.getElementById('custom-cursor');
-                    if (c) c.style.transform = `translate(${MOUSE.x}px, ${MOUSE.y}px)`;
+                    MOUSE.x = e.clientX; MOUSE.y = e.clientY;
+                    document.getElementById('custom-cursor').style.transform = `translate(${MOUSE.x}px, ${MOUSE.y}px)`;
                 });
-
                 document.addEventListener('mousedown', e => {
-                    MOUSE.down = true;
-                    // Эффект клика курсора
-                    const c = document.getElementById('custom-cursor');
-                    if (c) c.style.transform += " scale(0.8)";
-                    
-                    // Проверка клика по юнитам
-                    UI.handleWorldClick(e.clientX, e.clientY);
+                    MOUSE.down = true; UI.handleWorldClick(e.clientX, e.clientY);
+                    document.getElementById('custom-cursor').style.transform += " scale(0.8)";
                 });
-
                 document.addEventListener('mouseup', () => {
-                    MOUSE.down = false;
-                    const c = document.getElementById('custom-cursor');
-                    if (c) c.style.transform = c.style.transform.replace(" scale(0.8)", "");
-                    
-                    // Отпускаем юнитов
-                    WORLD.units.forEach(u => u.isGrabbed = false);
+                    MOUSE.down = false; WORLD.units.forEach(u => u.isGrabbed = false);
+                    document.getElementById('custom-cursor').style.transform = document.getElementById('custom-cursor').style.transform.replace(" scale(0.8)", "");
                 });
-
-                // Спавн первых юнитов
                 for(let i=0; i<3; i++) Game.spawn('stickman');
-                
-                // Запуск цикла
                 Game.loop();
             },
-
             resize: () => {
-                WIDTH = window.innerWidth;
-                HEIGHT = window.innerHeight;
+                WIDTH = window.innerWidth; HEIGHT = window.innerHeight;
                 CANVAS.width = WIDTH; CANVAS.height = HEIGHT;
                 W_CANVAS.width = WIDTH; W_CANVAS.height = HEIGHT;
                 WORLD.ground = HEIGHT - 50;
             },
-
-            // ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ
             loop: () => {
-                CTX.clearRect(0, 0, WIDTH, HEIGHT);
-                W_CTX.clearRect(0, 0, WIDTH, HEIGHT);
-
-                // 1. Время и Свет
+                CTX.clearRect(0, 0, WIDTH, HEIGHT); W_CTX.clearRect(0, 0, WIDTH, HEIGHT);
                 Game.updateTime();
-
-                // 2. Отрисовка структур
-                WORLD.structures.forEach(s => s.draw());
-
-                // 3. Отрисовка предметов
                 WORLD.items.forEach(i => i.draw());
-
-                // 4. Обновление Юнитов
-                WORLD.units.forEach(u => {
-                    u.update();
-                    u.draw();
-                });
-
-                // 5. Частицы
-                WORLD.particles.forEach((p, i) => {
-                    p.update();
-                    p.draw();
-                    if(p.life <= 0) WORLD.particles.splice(i, 1);
-                });
-
-                // 6. Погода
+                WORLD.units.forEach(u => { u.update(); u.draw(); });
+                WORLD.particles.forEach((p, i) => { p.update(); p.draw(); if(p.life <= 0) WORLD.particles.splice(i, 1); });
                 if(WORLD.rain) Game.drawRain();
-
-                // 7. Обновление UI
-                FRAME++;
-                UI.updateLoop();
-
+                FRAME++; UI.updateLoop();
                 requestAnimationFrame(Game.loop);
             },
-
             updateTime: () => {
-                WORLD.time += 0.5;
-                if(WORLD.time >= 2400) WORLD.time = 0;
-
-                // День / Ночь цикл
-                const lightLayer = document.getElementById('lighting-layer');
-                // Ночь с 20:00 до 06:00
-                if(WORLD.time > 2000 || WORLD.time < 600) {
-                    lightLayer.style.backgroundColor = "rgba(0, 5, 20, 0.85)"; // Темнота
-                } else if (WORLD.time > 600 && WORLD.time < 800) {
-                    lightLayer.style.backgroundColor = "rgba(255, 100, 50, 0.2)"; // Рассвет
-                } else if (WORLD.time > 1800 && WORLD.time < 2000) {
-                    lightLayer.style.backgroundColor = "rgba(50, 0, 100, 0.3)"; // Закат
-                } else {
-                    lightLayer.style.backgroundColor = "transparent"; // День
-                }
+                WORLD.time += 0.5; if(WORLD.time >= 2400) WORLD.time = 0;
+                const layer = document.getElementById('lighting-layer');
+                if(WORLD.time > 2000 || WORLD.time < 600) layer.style.backgroundColor = "rgba(0, 5, 20, 0.85)";
+                else if (WORLD.time > 600 && WORLD.time < 800) layer.style.backgroundColor = "rgba(255, 100, 50, 0.2)";
+                else layer.style.backgroundColor = "transparent";
             },
-
             spawn: (type) => {
-                if(type === 'stickman') {
-                    WORLD.units.push(new Entity(MOUSE.x, MOUSE.y));
-                    Game.spawnParticles(MOUSE.x, MOUSE.y, '#fff', 10);
-                }
-                else if(type === 'food' || type === 'wood') {
-                    WORLD.items.push(new Item(type, MOUSE.x || Math.random()*WIDTH, 50));
-                }
+                if(type === 'stickman') { WORLD.units.push(new Entity(MOUSE.x, MOUSE.y)); Game.spawnParticles(MOUSE.x, MOUSE.y, '#fff', 10); }
+                else if(type === 'food' || type === 'wood') WORLD.items.push(new Item(type, MOUSE.x || Rnd(0, WIDTH), 50));
             },
-
-            spawnParticles: (x, y, color, count) => {
-                for(let i=0; i<count; i++) {
-                    WORLD.particles.push(new Particle(x, y, color));
-                }
-            },
-
-            removeObj: (obj, listName) => {
-                const list = WORLD[listName];
-                const idx = list.indexOf(obj);
-                if(idx > -1) list.splice(idx, 1);
-            },
-
+            spawnParticles: (x, y, c, count) => { for(let i=0; i<count; i++) WORLD.particles.push(new Particle(x, y, c)); },
+            removeObj: (obj, list) => { const idx = WORLD[list].indexOf(obj); if(idx > -1) WORLD[list].splice(idx, 1); },
             drawRain: () => {
-                W_CTX.strokeStyle = 'rgba(100, 150, 255, 0.3)';
-                W_CTX.lineWidth = 1;
-                W_CTX.beginPath();
-                for(let i=0; i<100; i++) {
-                    const x = Math.random() * WIDTH;
-                    const y = Math.random() * HEIGHT;
-                    W_CTX.moveTo(x, y);
-                    W_CTX.lineTo(x - 2, y + 15);
-                }
+                W_CTX.strokeStyle = 'rgba(100, 150, 255, 0.3)'; W_CTX.lineWidth = 1; W_CTX.beginPath();
+                for(let i=0; i<100; i++) { const x = Rnd(0, WIDTH); const y = Rnd(0, HEIGHT); W_CTX.moveTo(x, y); W_CTX.lineTo(x-2, y+15); }
                 W_CTX.stroke();
             },
-
             toggleRain: () => { WORLD.rain = !WORLD.rain; },
-
             nuke: () => {
-                if(confirm("WARNING: NUKE PROTOCOL INITIATED. DESTROY ALL LIFE?")) {
+                if(confirm("NUKE?")) {
                     WORLD.units.forEach(u => Game.spawnParticles(u.x, u.y, '#f00', 50));
-                    WORLD.units = [];
-                    WORLD.items = [];
-                    WORLD.structures = [];
-                    // Вспышка
-                    const flash = document.createElement('div');
-                    flash.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#fff;z-index:99999;transition:opacity 2s;";
-                    document.body.appendChild(flash);
-                    setTimeout(() => { flash.style.opacity = 0; setTimeout(()=>flash.remove(), 2000); }, 50);
+                    WORLD.units = []; WORLD.items = [];
                 }
             },
-
-            save: () => {
-                alert("World State Saved to LocalStorage (Simulation)");
-            },
-
-            // Действия контекстного меню
-            ctxAction: (action) => {
-                if(!UI.selectedUnit) return;
-                const u = UI.selectedUnit;
-                
-                if(action === 'kill') u.die();
-                if(action === 'feed') { u.hunger = 100; u.say("Thanks!"); }
-                if(action === 'inspect') {
-                    // Force update card
-                    UI.selectedUnit = u;
-                    document.getElementById('entity-card').style.display = 'block';
-                }
+            ctxAction: (a) => {
+                const u = UI.selectedUnit; if(!u) return;
+                if(a === 'kill') u.die(); if(a === 'feed') { u.hunger=100; u.say("Thanks"); }
+                if(a === 'inspect') { UI.selectedUnit = u; document.getElementById('entity-card').style.display = 'block'; }
                 document.getElementById('ctx-menu').style.display = 'none';
             }
         };
 
-        // --- UI MANAGER ---
         const UI = {
             selectedUnit: null,
-
             handleWorldClick: (mx, my) => {
-                // Скрываем контекстное меню
                 document.getElementById('ctx-menu').style.display = 'none';
-
                 let clicked = false;
-                
-                // Проверяем клик по юниту
                 WORLD.units.forEach(u => {
                     if (Math.abs(u.x - mx) < 30 && Math.abs(u.y - 40 - my) < 50) {
-                        // Если ПКМ (button 2) - не обрабатываем тут, это делает contextmenu event
-                        // Тут ЛКМ - хватаем
-                        u.isGrabbed = true;
-                        UI.selectedUnit = u;
-                        UI.showCard(u);
-                        clicked = true;
+                        u.isGrabbed = true; UI.selectedUnit = u; UI.showCard(u); clicked = true;
                     }
                 });
-
-                if(!clicked) {
-                    UI.selectedUnit = null;
-                    document.getElementById('entity-card').style.display = 'none';
-                    // Эффект клика по пустому месту
-                    Game.spawnParticles(mx, my, 'rgba(138,43,226,0.3)', 3);
-                }
+                if(!clicked) { UI.selectedUnit = null; document.getElementById('entity-card').style.display = 'none'; }
             },
-
             showCard: (u) => {
-                const card = document.getElementById('entity-card');
-                card.style.display = 'block';
+                document.getElementById('entity-card').style.display = 'block';
                 document.getElementById('card-color').style.background = u.tribe;
                 document.getElementById('card-name').innerText = "UNIT " + u.id;
             },
-
             updateLoop: () => {
-                // Обновление статов в TopBar
                 document.getElementById('ui-pop').innerText = WORLD.units.length;
-                
-                // Форматирование времени
-                const h = Math.floor(WORLD.time / 100);
-                const m = Math.floor((WORLD.time % 100) / 100 * 60);
+                const h = Math.floor(WORLD.time / 100); const m = Math.floor((WORLD.time % 100) / 100 * 60);
                 document.getElementById('ui-time').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
-                
                 document.getElementById('ui-weather').innerText = WORLD.rain ? "RAIN" : "CLEAR";
-
-                // Обновление карточки
+                
                 if(UI.selectedUnit && UI.selectedUnit.hp > 0) {
                     const u = UI.selectedUnit;
                     document.getElementById('card-state').innerText = u.state.toUpperCase();
                     document.getElementById('card-goal').innerText = u.goal;
-                    
                     document.getElementById('bar-hp').style.width = u.hp + "%";
-                    document.getElementById('txt-hp').innerText = Math.floor(u.hp) + "%";
-
                     document.getElementById('bar-hunger').style.width = u.hunger + "%";
-                    document.getElementById('txt-hunger').innerText = Math.floor(u.hunger) + "%";
-
                     document.getElementById('bar-energy').style.width = u.energy + "%";
-                    document.getElementById('txt-energy').innerText = Math.floor(u.energy) + "%";
-                } else {
-                     document.getElementById('entity-card').style.display = 'none';
-                }
-            },
-
-            toggleSettings: () => {
-                const win = document.getElementById('settings-win');
-                win.classList.toggle('open');
-                
-                // Привязка настроек
-                if(win.classList.contains('open')) {
-                    document.getElementById('set-grav').value = WORLD.gravity * 20;
-                    document.getElementById('set-grav').oninput = (e) => WORLD.gravity = e.target.value / 20;
-                    
-                    document.getElementById('set-steal').checked = WORLD.settings.stealMouse;
-                    document.getElementById('set-steal').onchange = (e) => WORLD.settings.stealMouse = e.target.checked;
-
-                    document.getElementById('set-war').checked = WORLD.settings.warMode;
-                    document.getElementById('set-war').onchange = (e) => WORLD.settings.warMode = e.target.checked;
-                }
+                } else document.getElementById('entity-card').style.display = 'none';
             }
         };
 
-        // Обработка ПКМ (Контекстное меню)
         window.addEventListener('contextmenu', e => {
             e.preventDefault();
-            const mx = e.clientX;
-            const my = e.clientY;
-            
+            const mx = e.clientX; const my = e.clientY;
             WORLD.units.forEach(u => {
                 if (Math.abs(u.x - mx) < 30 && Math.abs(u.y - 40 - my) < 50) {
                     UI.selectedUnit = u;
                     const menu = document.getElementById('ctx-menu');
-                    menu.style.display = 'block';
-                    menu.style.left = mx + 'px';
-                    menu.style.top = my + 'px';
+                    menu.style.display = 'block'; menu.style.left = mx + 'px'; menu.style.top = my + 'px';
                 }
             });
         });
 
-        // ЗАПУСК ПОСЛЕ ЗАГРУЗКИ СТРАНИЦЫ
-        window.onload = () => {
-            // Анимация Intro
-            setTimeout(() => {
-                const boot = document.getElementById('boot-screen');
-                boot.style.opacity = '0';
-                setTimeout(() => {
-                    boot.style.display = 'none';
-                    Game.init();
-                }, 800);
-            }, 2500);
-        };
-
+        window.onload = Game.init;
     </script>
 </body>
 </html>
