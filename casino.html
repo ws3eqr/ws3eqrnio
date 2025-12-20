@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WS3EQR | CYBER CASINO</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #0b0b0f;
+            --sidebar: #15151a;
+            --accent: #00ff88; /* Cyber Green */
+            --accent-glow: rgba(0, 255, 136, 0.4);
+            --gold: #ffd700;
+            --danger: #ff4444;
+            --purple: #bc13fe;
+            --text: #fff;
+            --panel: rgba(30, 30, 35, 0.8);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; height: 100vh; overflow: hidden; display: flex; }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 80px; background: var(--sidebar); height: 100%; display: flex; flex-direction: column;
+            align-items: center; padding: 20px 0; border-right: 1px solid #333; z-index: 100;
+            transition: width 0.3s;
+        }
+        .sidebar:hover { width: 200px; }
+        
+        .logo { font-family: 'Orbitron'; font-weight: 900; color: var(--accent); font-size: 1.5rem; margin-bottom: 40px; text-shadow: 0 0 10px var(--accent); cursor: pointer; }
+        .sidebar:hover .logo::after { content: " CASINO"; color: #fff; }
+        
+        .nav-item {
+            width: 100%; padding: 15px 0; display: flex; align-items: center; justify-content: center;
+            color: #777; cursor: pointer; transition: 0.2s; font-size: 1.2rem;
+        }
+        .nav-item:hover, .nav-item.active { color: #fff; background: rgba(255,255,255,0.05); border-left: 3px solid var(--accent); }
+        .nav-item i { margin-right: 0; transition: 0.3s; }
+        .sidebar:hover .nav-item { justify-content: flex-start; padding-left: 20px; }
+        .sidebar:hover .nav-item i { margin-right: 15px; }
+        .nav-text { display: none; white-space: nowrap; font-weight: bold; }
+        .sidebar:hover .nav-text { display: block; }
+
+        /* --- MAIN CONTENT --- */
+        .main { flex: 1; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+
+        /* TOP BAR */
+        .topbar {
+            height: 70px; background: rgba(20,20,25,0.9); border-bottom: 1px solid #333;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .balance-box {
+            background: linear-gradient(45deg, #222, #333); padding: 10px 20px; border-radius: 12px;
+            border: 1px solid #444; display: flex; flex-direction: column; min-width: 150px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5); cursor: pointer; transition: 0.2s;
+        }
+        .balance-box:hover { transform: scale(1.05); border-color: var(--accent); }
+        .bal-label { font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+        .bal-amount { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent); }
+        
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .lvl-badge { background: var(--purple); padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; box-shadow: 0 0 10px var(--purple); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #fff; }
+
+        /* GAME GRID */
+        .content-area { flex: 1; overflow-y: auto; padding: 30px; }
+        .games-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;
+        }
+        
+        .game-card {
+            background: var(--panel); border: 1px solid #333; border-radius: 15px;
+            height: 250px; position: relative; overflow: hidden; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .game-card:hover { transform: translateY(-10px); border-color: var(--accent); box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2); }
+        .game-img { font-size: 4rem; margin-bottom: 20px; filter: drop-shadow(0 0 10px rgba(255,255,255,0.5)); }
+        .game-title { font-family: 'Orbitron'; font-size: 1.2rem; z-index: 2; }
+        .game-play-btn {
+            margin-top: 15px; padding: 8px 20px; background: var(--accent); color: #000;
+            border: none; border-radius: 20px; font-weight: bold; opacity: 0; transition: 0.3s; transform: translateY(20px);
+        }
+        .game-card:hover .game-play-btn { opacity: 1; transform: translateY(0); }
+
+        /* GAME FRAME (OVERLAY) */
+        .game-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 200; display: none; flex-direction: column;
+            animation: slideIn 0.3s ease;
+        }
+        .go-header {
+            height: 60px; border-bottom: 1px solid #333; display: flex; align-items: center; padding: 0 20px;
+            background: #111; justify-content: space-between;
+        }
+        .go-back { cursor: pointer; color: #888; font-size: 1.2rem; transition: 0.2s; }
+        .go-back:hover { color: #fff; }
+        .go-title { font-family: 'Orbitron'; font-size: 1.2rem; color: var(--accent); }
+        .go-body { flex: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+
+        /* --- NOTIFICATIONS --- */
+        .notif {
+            position: fixed; bottom: 20px; right: 20px; background: #222; border-left: 4px solid var(--accent);
+            padding: 15px 25px; border-radius: 5px; color: #fff; font-weight: bold;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); transform: translateX(200%); transition: 0.3s; z-index: 9999;
+        }
+        .notif.show { transform: translateX(0); }
+
+        /* MOBILE ADAPTATION */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; height: 60px; flex-direction: row; justify-content: space-around; padding: 0; border-right: none; border-top: 1px solid #333; order: 2; position: relative; }
+            .sidebar:hover { width: 100%; }
+            .logo, .nav-text { display: none; }
+            .nav-item { border-left: none; border-top: 3px solid transparent; }
+            .nav-item:hover, .nav-item.active { border-left: none; border-top-color: var(--accent); }
+            .main { order: 1; }
+            .game-overlay { z-index: 500; } /* Above mobile nav */
+        }
+
+        @keyframes slideIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+        /* GAME SPECIFIC STYLES */
+        .slot-machine { display: flex; gap: 10px; background: #222; padding: 20px; border-radius: 15px; border: 4px solid var(--gold); }
+        .reel { width: 60px; height: 80px; background: #fff; color: #000; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; border-radius: 5px; box-shadow: inset 0 0 10px #000; }
+        
+        .mines-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+        .mine-tile { width: 50px; height: 50px; background: #333; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: 0.2s; }
+        .mine-tile:hover { background: #444; }
+        .mine-tile.revealed { background: #555; }
+        .mine-tile.gem { background: var(--accent); box-shadow: 0 0 15px var(--accent); }
+        .mine-tile.boom { background: var(--danger); }
+
+        .control-panel { margin-top: 20px; display: flex; gap: 10px; flex-direction: column; align-items: center; }
+        .bet-input { background: #111; border: 1px solid #444; color: #fff; padding: 10px; border-radius: 5px; width: 150px; text-align: center; font-size: 1.2rem; }
+        .action-btn { background: var(--accent); color: #000; border: none; padding: 12px 30px; font-weight: 900; border-radius: 50px; cursor: pointer; font-size: 1.2rem; box-shadow: 0 0 20px var(--accent-glow); transition: 0.2s; }
+        .action-btn:active { transform: scale(0.95); }
+        .action-btn:disabled { background: #555; cursor: not-allowed; box-shadow: none; color: #888; }
+
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">WS3</div>
+        <div class="nav-item active" onclick="Router.go('home')"><i class="fa-solid fa-house"></i><span class="nav-text">Lobby</span></div>
+        <div class="nav-item" onclick="Router.go('games')"><i class="fa-solid fa-gamepad"></i><span class="nav-text">Games</span></div>
+        <div class="nav-item" onclick="Wallet.add(1000)"><i class="fa-solid fa-wallet"></i><span class="nav-text">Deposit</span></div>
+        <div class="nav-item" onclick="alert('Coming Soon')"><i class="fa-solid fa-trophy"></i><span class="nav-text">Rank</span></div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="topbar">
+            <div class="user-profile">
+                <div class="avatar"></div>
+                <div>
+                    <div style="font-weight:bold;">Player One</div>
+                    <div class="lvl-badge">LVL <span id="lvl-display">1</span></div>
+                </div>
+            </div>
+            <div class="balance-box" onclick="Wallet.add(100)">
+                <span class="bal-label">Real Balance</span>
+                <span class="bal-amount">$<span id="bal-display">0.00</span></span>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div id="lobby-view">
+                <h2 style="margin-bottom: 20px; font-family: 'Orbitron'">HOT GAMES</h2>
+                <div class="games-grid" id="games-grid">
+                    <!-- Игры генерируются JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- GAME OVERLAY -->
+        <div class="game-overlay" id="game-frame">
+            <div class="go-header">
+                <div class="go-back" onclick="GameRunner.close()"><i class="fa-solid fa-arrow-left"></i> BACK TO LOBBY</div>
+                <div class="go-title" id="game-title-display">GAME</div>
+                <div style="width: 20px;"></div>
+            </div>
+            <div class="go-body" id="game-container">
+                <!-- Сюда инжектится игра -->
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION -->
+    <div class="notif" id="notif">WIN! +$500</div>
+
+    <script>
+        // --- 1. CORE SYSTEM (Движок) ---
+        const Core = {
+            balance: 0,
+            xp: 0,
+            level: 1,
+            
+            init: () => {
+                // Загрузка данных
+                const saved = localStorage.getItem('cyber_casino_save');
+                if(saved) {
+                    const data = JSON.parse(saved);
+                    Core.balance = data.balance;
+                    Core.xp = data.xp;
+                    Core.level = data.level;
+                } else {
+                    Core.balance = 5000; // Стартовый бонус
+                }
+                Wallet.updateUI();
+                GamesList.render();
+            },
+
+            save: () => {
+                const data = { balance: Core.balance, xp: Core.xp, level: Core.level };
+                localStorage.setItem('cyber_casino_save', JSON.stringify(data));
+            },
+
+            notify: (msg, type='success') => {
+                const n = document.getElementById('notif');
+                n.innerText = msg;
+                n.style.borderLeftColor = type === 'error' ? '#ff4444' : '#00ff88';
+                n.classList.add('show');
+                setTimeout(() => n.classList.remove('show'), 3000);
+            }
+        };
+
+        const Wallet = {
+            updateUI: () => {
+                const el = document.getElementById('bal-display');
+                // Анимация чисел
+                let start = parseFloat(el.innerText.replace(',',''));
+                let end = Core.balance;
+                el.innerText = end.toLocaleString('en-US', {minimumFractionDigits: 2});
+                
+                // Анимация уровня
+                document.getElementById('lvl-display').innerText = Core.level;
+            },
+            
+            add: (amount) => {
+                Core.balance += amount;
+                Core.save();
+                Wallet.updateUI();
+                if(amount > 0) Core.notify(`DEPOSIT SUCCESS: +$${amount}`);
+            },
+
+            bet: (amount) => {
+                if(amount <= 0) { Core.notify("Invalid Amount", "error"); return false; }
+                if(Core.balance >= amount) {
+                    Core.balance -= amount;
+                    // XP System
+                    Core.xp += amount * 0.1;
+                    if(Core.xp > Core.level * 1000) { Core.level++; Core.notify(`LEVEL UP! ${Core.level}`); }
+                    Core.save();
+                    Wallet.updateUI();
+                    return true;
+                } else {
+                    Core.notify("INSUFFICIENT FUNDS", "error");
+                    return false;
+                }
+            }
+        };
+
+        // --- 2. GAME LIST & RENDER ---
+        const GAMES = [
+            { id: 'slots', name: 'NEON SLOTS', icon: '🎰', color: '#bc13fe' },
+            { id: 'mines', name: 'CYBER MINES', icon: '💣', color: '#ff4444' },
+            { id: 'crash', name: 'CRASH RUN', icon: '📈', color: '#00ff88' },
+            { id: 'clicker', name: 'COIN TAP', icon: '👆', color: '#ffd700' },
+            // Добавляй сюда еще хоть 20 игр, просто копируя строку
+        ];
+
+        // Генерируем 21 заглушку чтобы было 25 игр
+        for(let i=5; i<=25; i++) {
+            GAMES.push({ id: 'coming_soon', name: `GAME ${i}`, icon: '🔒', color: '#333' });
+        }
+
+        const GamesList = {
+            render: () => {
+                const grid = document.getElementById('games-grid');
+                grid.innerHTML = '';
+                GAMES.forEach(g => {
+                    const card = document.createElement('div');
+                    card.className = 'game-card';
+                    card.innerHTML = `
+                        <div class="game-img" style="color:${g.color}">${g.icon}</div>
+                        <div class="game-title">${g.name}</div>
+                        <button class="game-play-btn">PLAY</button>
+                    `;
+                    card.onclick = () => GameRunner.open(g);
+                    grid.appendChild(card);
+                });
+            }
+        };
+
+        // --- 3. GAME RUNNER (Движок Игр) ---
+        const GameRunner = {
+            activeGame: null,
+            
+            open: (game) => {
+                if(game.id === 'coming_soon') { Core.notify("Comming Soon in DLC!", "error"); return; }
+                
+                document.getElementById('game-frame').style.display = 'flex';
+                document.getElementById('game-title-display').innerText = game.name;
+                const container = document.getElementById('game-container');
+                container.innerHTML = ''; // Очистка
+                
+                // Запуск логики игры
+                if(game.id === 'slots') SlotsGame.init(container);
+                if(game.id === 'mines') MinesGame.init(container);
+                if(game.id === 'crash') CrashGame.init(container);
+                if(game.id === 'clicker') ClickerGame.init(container);
+            },
+
+            close: () => {
+                document.getElementById('game-frame').style.display = 'none';
+                document.getElementById('game-container').innerHTML = '';
+                // Остановка циклов если есть
+                if(CrashGame.interval) clearInterval(CrashGame.interval);
+            }
+        };
+
+        // --- 4. MINI GAMES LOGIC ---
+
+        // GAME 1: SLOTS
+        const SlotsGame = {
+            init: (container) => {
+                container.innerHTML = `
+                    <div style="text-align:center">
+                        <div class="slot-machine">
+                            <div class="reel" id="r1">🍒</div>
+                            <div class="reel" id="r2">🍒</div>
+                            <div class="reel" id="r3">🍒</div>
+                        </div>
+                        <div class="control-panel">
+                            <input type="number" id="slot-bet" class="bet-input" value="100">
+                            <button class="action-btn" onclick="SlotsGame.spin()">SPIN</button>
+                        </div>
+                    </div>
+                `;
+            },
+            spin: () => {
+                const bet = parseInt(document.getElementById('slot-bet').value);
+                if(!Wallet.bet(bet)) return;
+
+                const symbols = ['🍒', '🍋', '🍇', '💎', '7️⃣'];
+                const reels = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3')];
+                
+                // Анимация
+                let speed = 100;
+                let counter = 0;
+                const spinInterval = setInterval(() => {
+                    reels.forEach(r => r.innerText = symbols[Math.floor(Math.random()*symbols.length)]);
+                    counter++;
+                    if(counter > 15) {
+                        clearInterval(spinInterval);
+                        SlotsGame.result(bet, reels, symbols);
+                    }
+                }, speed);
+            },
+            result: (bet, reels, symbols) => {
+                const r1 = symbols[Math.floor(Math.random()*symbols.length)];
+                const r2 = symbols[Math.floor(Math.random()*symbols.length)];
+                const r3 = symbols[Math.floor(Math.random()*symbols.length)];
+                
+                reels[0].innerText = r1; reels[1].innerText = r2; reels[2].innerText = r3;
+
+                if(r1 === r3 && r2 === r3) { // Джекпот
+                    const win = bet * 10;
+                    Wallet.add(win);
+                    Core.notify(`JACKPOT! +$${win}`);
+                } else if(r1 === r2 || r2 === r3 || r1 === r3) { // 2 совпадения
+                    const win = bet * 2;
+                    Wallet.add(win);
+                    Core.notify(`WIN! +$${win}`);
+                }
+            }
+        };
+
+        // GAME 2: MINES
+        const MinesGame = {
+            grid: [],
+            mines: [],
+            active: false,
+            bet: 0,
+            
+            init: (container) => {
+                container.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                        <div class="mines-grid" id="mines-board"></div>
+                        <div class="control-panel">
+                            <input type="number" id="mines-bet" class="bet-input" value="100">
+                            <button class="action-btn" id="mines-btn" onclick="MinesGame.start()">START</button>
+                            <button class="action-btn" id="cashout-btn" onclick="MinesGame.cashout()" style="display:none; background:#ffd700">CASHOUT</button>
+                        </div>
+                    </div>
+                `;
+                MinesGame.renderGrid();
+            },
+            renderGrid: () => {
+                const board = document.getElementById('mines-board');
+                board.innerHTML = '';
+                for(let i=0; i<25; i++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'mine-tile';
+                    tile.onclick = () => MinesGame.click(i, tile);
+                    board.appendChild(tile);
+                }
+            },
+            start: () => {
+                const bet = parseInt(document.getElementById('mines-bet').value);
+                if(!Wallet.bet(bet)) return;
+                
+                MinesGame.bet = bet;
+                MinesGame.active = true;
+                MinesGame.mines = [];
+                // Генерируем 5 мин
+                while(MinesGame.mines.length < 5) {
+                    let r = Math.floor(Math.random()*25);
+                    if(MinesGame.mines.indexOf(r) === -1) MinesGame.mines.push(r);
+                }
+                
+                MinesGame.renderGrid();
+                document.getElementById('mines-btn').style.display = 'none';
+                document.getElementById('cashout-btn').style.display = 'block';
+                MinesGame.currentMult = 1.0;
+            },
+            click: (idx, el) => {
+                if(!MinesGame.active || el.classList.contains('revealed')) return;
+                
+                if(MinesGame.mines.includes(idx)) {
+                    // BOOM
+                    el.classList.add('boom');
+                    el.innerHTML = '💣';
+                    MinesGame.gameOver(false);
+                } else {
+                    // GEM
+                    el.classList.add('revealed', 'gem');
+                    el.innerHTML = '💎';
+                    MinesGame.currentMult += 0.2;
+                    document.getElementById('cashout-btn').innerText = `TAKE $${Math.floor(MinesGame.bet * MinesGame.currentMult)}`;
+                }
+            },
+            cashout: () => {
+                const win = Math.floor(MinesGame.bet * MinesGame.currentMult);
+                Wallet.add(win);
+                MinesGame.gameOver(true);
+            },
+            gameOver: (win) => {
+                MinesGame.active = false;
+                document.getElementById('mines-btn').style.display = 'block';
+                document.getElementById('cashout-btn').style.display = 'none';
+                // Показать все мины
+                const tiles = document.querySelectorAll('.mine-tile');
+                tiles.forEach((t, i) => {
+                    if(MinesGame.mines.includes(i)) { t.innerHTML = '💣'; if(!win) t.classList.add('revealed'); }
+                });
+                if(!win) Core.notify("BOOM! You lost.", "error");
+            }
+        };
+
+        // GAME 3: CRASH
+        const CrashGame = {
+            multiplier: 1.00,
+            interval: null,
+            running: false,
+            crashed: false,
+            
+            init: (container) => {
+                container.innerHTML = `
+                    <div style="text-align:center">
+                        <div style="font-size:4rem; font-weight:bold; color:var(--accent); margin-bottom:20px;" id="crash-num">1.00x</div>
+                        <canvas id="crash-graph" width="300" height="200" style="background:#000; border:1px solid #333; margin-bottom:20px;"></canvas>
+                        <div class="control-panel">
+                            <input type="number" id="crash-bet" class="bet-input" value="100">
+                            <button class="action-btn" id="crash-action" onclick="CrashGame.action()">BET</button>
+                        </div>
+                    </div>
+                `;
+            },
+            action: () => {
+                const btn = document.getElementById('crash-action');
+                if(!CrashGame.running) {
+                    // START
+                    const bet = parseInt(document.getElementById('crash-bet').value);
+                    if(!Wallet.bet(bet)) return;
+                    CrashGame.bet = bet;
+                    CrashGame.running = true;
+                    CrashGame.crashed = false;
+                    CrashGame.multiplier = 1.00;
+                    btn.innerText = "CASHOUT";
+                    btn.style.background = "#ffd700";
+                    
+                    const crashPoint = 1 + Math.random() * 5; // Случайный краш до 6x
+                    
+                    CrashGame.interval = setInterval(() => {
+                        CrashGame.multiplier += 0.01;
+                        document.getElementById('crash-num').innerText = CrashGame.multiplier.toFixed(2) + 'x';
+                        if(CrashGame.multiplier >= crashPoint) {
+                            CrashGame.crash();
+                        }
+                    }, 50);
+                } else {
+                    // CASHOUT
+                    clearInterval(CrashGame.interval);
+                    const win = Math.floor(CrashGame.bet * CrashGame.multiplier);
+                    Wallet.add(win);
+                    CrashGame.running = false;
+                    btn.innerText = "BET";
+                    btn.style.background = "var(--accent)";
+                    document.getElementById('crash-num').style.color = "#ffd700";
+                    Core.notify(`Escaped at ${CrashGame.multiplier.toFixed(2)}x`);
+                }
+            },
+            crash: () => {
+                clearInterval(CrashGame.interval);
+                CrashGame.running = false;
+                CrashGame.crashed = true;
+                document.getElementById('crash-num').style.color = "red";
+                document.getElementById('crash-num').innerText = "CRASHED";
+                document.getElementById('crash-action').innerText = "BET";
+                document.getElementById('crash-action').style.background = "var(--accent)";
+            }
+        };
+
+        // GAME 4: CLICKER
+        const ClickerGame = {
+            init: (container) => {
+                container.innerHTML = `
+                    <div style="text-align:center">
+                        <div style="font-size:5rem; cursor:pointer; user-select:none; transition:0.1s;" 
+                             onmousedown="this.style.transform='scale(0.9)'" 
+                             onmouseup="this.style.transform='scale(1)'"
+                             onclick="ClickerGame.click()">🪙</div>
+                        <p>Click to earn $1</p>
+                    </div>
+                `;
+            },
+            click: () => {
+                Wallet.add(1);
+            }
+        };
+
+        // START
+        window.onload = Core.init;
+
+    </script>
+</body>
+</html>
